@@ -252,7 +252,7 @@ print("=" * 60)
 # MAGIC
 # MAGIC Here's an example of what the Schema Diff looks like:
 # MAGIC
-# MAGIC ![Schema Comparison](/Workspace/Users/steven.tan@databricks.com/lakebase_branching/Compare_Schema.png)
+# MAGIC ![Schema Comparison](/Workspace/Users//lakebase_branching/Compare_Schema.png)
 
 # COMMAND ----------
 
