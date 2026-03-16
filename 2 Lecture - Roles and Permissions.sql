@@ -132,8 +132,51 @@
 
 -- COMMAND ----------
 
--- MAGIC %md
--- MAGIC `CREATE EXTENSION IF NOT EXISTS databricks_auth;`
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>CREATE EXTENSION IF NOT EXISTS databricks_auth;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
 
 -- COMMAND ----------
 
@@ -151,25 +194,158 @@
 
 -- COMMAND ----------
 
--- MAGIC %md
+-- MAGIC %md-sandbox
 -- MAGIC - Create an OAuth role for a Databricks user
 -- MAGIC - Replace with the email of a colleague in your workspace
 -- MAGIC
--- MAGIC `SELECT databricks_create_role('colleague@your-company.com', 'USER');`
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('colleague@your-company.com', 'USER');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 
 -- COMMAND ----------
 
--- MAGIC %md
+-- MAGIC %md-sandbox
 -- MAGIC You can also create roles for **service principals** and **groups**:
 -- MAGIC
 -- MAGIC
 -- MAGIC - For a service principal (use the application/client ID)
 -- MAGIC
--- MAGIC `SELECT databricks_create_role('8c01cfb1-62c9-4a09-88a8-e195f4b01b08', 'SERVICE_PRINCIPAL');`
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
 -- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('8c01cfb1-62c9-4a09-88a8-e195f4b01b08', 'SERVICE_PRINCIPAL');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
 -- MAGIC - For a Databricks group (case-sensitive, must match exactly)
 -- MAGIC
--- MAGIC `SELECT databricks_create_role('Data Engineers', 'GROUP');`
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('Data Engineers', 'GROUP');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 -- MAGIC
 -- MAGIC
 -- MAGIC <div style="background-color: #fff3cd; border-left: 6px solid #ffc107; padding: 12px; margin: 10px 0;">
@@ -188,11 +364,54 @@
 
 -- COMMAND ----------
 
--- MAGIC %md
+-- MAGIC %md-sandbox
 -- MAGIC - Create a native Postgres password role
 -- MAGIC - Replace with your desired role name and a secure password
 -- MAGIC
--- MAGIC `CREATE ROLE app_readonly_user WITH LOGIN PASSWORD 'Ch@ngeMe_Secur3!2025';`
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>CREATE ROLE app_readonly_user WITH LOGIN PASSWORD 'Ch@ngeMe_Secur3!2025';</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
 
 -- COMMAND ----------
 
@@ -265,16 +484,59 @@
 
 -- COMMAND ----------
 
--- List all roles with their key attributes
-SELECT
-  rolname AS "Role Name",
-  rolcanlogin AS "Can Login",
-  rolcreatedb AS "Can Create DB",
-  rolcreaterole AS "Can Create Role",
-  rolsuper AS "Is Superuser"
-FROM pg_roles
-WHERE rolname NOT LIKE 'pg_%'
-ORDER BY rolname;
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- List all roles with their key attributes
+-- MAGIC SELECT
+-- MAGIC   rolname AS "Role Name",
+-- MAGIC   rolcanlogin AS "Can Login",
+-- MAGIC   rolcreatedb AS "Can Create DB",
+-- MAGIC   rolcreaterole AS "Can Create Role",
+-- MAGIC   rolsuper AS "Is Superuser"
+-- MAGIC FROM pg_roles
+-- MAGIC WHERE rolname NOT LIKE 'pg_%'
+-- MAGIC ORDER BY rolname;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 
 -- COMMAND ----------
 
@@ -285,17 +547,60 @@ ORDER BY rolname;
 
 -- COMMAND ----------
 
--- Check table-level permissions for 'app_readonly_user'
--- Replace role name as needed
-SELECT
-  schemaname AS "Schema",
-  tablename AS "Table",
-  has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'SELECT') AS "Can SELECT",
-  has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'INSERT') AS "Can INSERT",
-  has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'UPDATE') AS "Can UPDATE",
-  has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'DELETE') AS "Can DELETE"
-FROM pg_tables
-WHERE schemaname = 'public';
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- Check table-level permissions for 'app_readonly_user'
+-- MAGIC -- Replace role name as needed
+-- MAGIC SELECT
+-- MAGIC   schemaname AS "Schema",
+-- MAGIC   tablename AS "Table",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'SELECT') AS "Can SELECT",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'INSERT') AS "Can INSERT",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'UPDATE') AS "Can UPDATE",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'DELETE') AS "Can DELETE"
+-- MAGIC FROM pg_tables
+-- MAGIC WHERE schemaname = 'public';</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 
 -- COMMAND ----------
 
@@ -306,18 +611,104 @@ WHERE schemaname = 'public';
 
 -- COMMAND ----------
 
--- List all role memberships in the project
-SELECT
-  r.rolname AS "Role",
-  pg_get_userbyid(m.member) AS "Member"
-FROM pg_auth_members m
-JOIN pg_roles r ON r.oid = m.roleid
-ORDER BY r.rolname;
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- List all role memberships in the project
+-- MAGIC SELECT
+-- MAGIC   r.rolname AS "Role",
+-- MAGIC   pg_get_userbyid(m.member) AS "Member"
+-- MAGIC FROM pg_auth_members m
+-- MAGIC JOIN pg_roles r ON r.oid = m.roleid
+-- MAGIC ORDER BY r.rolname;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 
 -- COMMAND ----------
 
--- Check database-level connection permissions
-SELECT has_database_privilege('app_readonly_user', 'databricks_postgres', 'CONNECT') AS "Can Connect";
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- Check database-level connection permissions
+-- MAGIC SELECT has_database_privilege('app_readonly_user', 'databricks_postgres', 'CONNECT') AS "Can Connect";</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
 
 -- COMMAND ----------
 
