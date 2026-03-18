@@ -5,7 +5,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Connect External and Databricks Apps to Lakebase
+# MAGIC # Connect External Apps to Lakebase
 # MAGIC
 # MAGIC This notebook explores the different ways of integrating applications with Lakebase. We will discuss the follwoing topics listed below:
 # MAGIC
