@@ -42,7 +42,7 @@ The workshop is organized into sequential lectures and labs. Lectures provide co
 | 3.3 | `3.3 Lab - Schema To Prod Migration.py` | Lab | Promote validated schema changes from a feature branch to production by replaying DDL |
 | 3.4 | `3.4 Lab - Branch Reset.py` | Lab | Detect production drift, reset a branch to match parent state, and re-test migrations |
 | 4 | `4 Lecture - Point in Time Restore & Snapshots.ipynb` | Lecture | PITR restore windows, snapshot scheduling, and when to use each |
-| 4.1 | `4.1 Lab - PITR (Disaster Recovery).ipynb` | Lab | Simulate an accidental `DROP TABLE` and recover using Point-in-Time Recovery |
+| 4.1 | `4.1 Lab - Point in Time Recovery (Disaster Management).ipynb` | Lab | Simulate an accidental `DROP TABLE` and recover using Point-in-Time Recovery |
 
 ### Bonus Modules
 
