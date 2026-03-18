@@ -1,29 +1,28 @@
 # Lakebase In-a-Box Workshop
 
-This is a hands-on workshop for learning about **Databricks Lakebase** — a fully managed, serverless PostgreSQL database built on open architecture that decouples compute from storage.
+This hands-on workshop introduces **Databricks Lakebase** — a fully managed, serverless PostgreSQL database built on open architecture that decouples compute from storage and demonstrates how to leverage its unique capabilities to build and maintain production-grade applications with unprecedented agility.
 
-You'll work through the workshop as a developer at **DataCart**, a rapidly growing e-commerce platform preparing for a major Spring Sale launch.
+You will step into the role of a developer at DataCart, a rapidly growing e-commerce platform. The stakes are high: the "Spring Sale" launch is weeks away, and you and your team needs to roll out international currency support, a new loyalty program, and performance optimizations—all while ensuring the production site stays bulletproof.
 
 ## What You'll Learn
 
 | Topic | Description |
 |-------|-------------|
-| **Project Setup** | Provision and configure a Lakebase Autoscaling PostgreSQL project |
+| **Lakebase Overview** | Understand what lakebase is and its unique architecture |
 | **Roles & Permissions** | Manage workspace-level and database-level access control with OAuth and native Postgres roles |
 | **Database Branching** | Create isolated, zero-copy environments for parallel development using copy-on-write storage |
-| **Schema Diff** | Compare schemas across branches to validate changes before promotion |
 | **Point-in-Time Recovery** | Recover from catastrophic errors (e.g. accidental `DROP TABLE`) to any second within a configurable window |
 | **Snapshots** | Create named restore points before planned deployments and migrations |
-| **Monitoring** | Interpret RAM, CPU, connections, deadlocks, cache hit rates, and query performance metrics |
-| **Reverse ETL** | Sync curated Lakehouse data into Lakebase using Synced Tables (Snapshot, Triggered, Continuous modes) |
+| **Monitoring** | Monitor Database using in built performance metrics and graphs |
+| **Reverse ETL** | Sync curated Lakehouse data into Lakebase using Synced Tables |
 
 ## Prerequisites
 
 - A Databricks workspace with **Unity Catalog** enabled
 - Permission to create **Lakebase Autoscaling Projects** and **catalogs**
 - Access to a **Serverless SQL Warehouse** (2X-Small is sufficient)
-- A Databricks cluster with **Python 3.10+** (for the lab notebooks)
-- Workspace region must be one of: `us-east-1`, `us-east-2`, `eu-central-1`, `eu-west-1`, `eu-west-2`, `ap-south-1`, `ap-southeast-1`, `ap-southeast-2`
+- A Databricks cluster (for the lab notebooks)
+- Workspace in a region that supports Lakebase Autoscaling
 
 ## Workshop Structure
 
@@ -51,14 +50,7 @@ The workshop is organized into sequential lectures and labs. Lectures provide co
 |---|----------|------|-------------|
 | 5 | `5 Lecture - Monitoring (BONUS).ipynb` | Lecture | Metrics dashboards (RAM, CPU, connections, deadlocks, cache hit rate), active queries, query performance, and system operations |
 | 6 | `6 Lecture Reverse ETL (BONUS).ipynb` | Lecture | Synced Tables, sync modes (Snapshot/Triggered/Continuous), data type mappings, and best practices |
-| 7 | `7 (STILL WORKING ON) Lecture - Connect Apps to Lakebase (Bonus).py` | Lecture | Connecting external applications to Lakebase (work in progress) |
 
-### Utilities
-
-| Notebook | Description |
-|----------|-------------|
-| `99_Cleanup.py` | Deletes all non-default branches and optionally the entire project |
-| `Includes/Classroom-Setup-Common.py` | Shared setup logic for catalog provisioning across lab environments |
 
 ## Getting Started
 
