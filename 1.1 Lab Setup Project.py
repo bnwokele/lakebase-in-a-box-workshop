@@ -9,7 +9,7 @@
 # MAGIC 1. Creates a new Lakebase project with autoscaling compute
 # MAGIC 2. Waits for the project to become active
 # MAGIC 3. Connects via OAuth token authentication (fully automated)
-# MAGIC 4. Seeds 4 tables with realistic e-commerce data
+# MAGIC 4. Seeds 5 tables with realistic e-commerce data
 # MAGIC 5. Verifies everything is ready
 # MAGIC
 # MAGIC ## Prerequisites
@@ -23,9 +23,11 @@
 # MAGIC Lakebase Project: lakebase-branching-<username>
 # MAGIC └── production (default branch)
 # MAGIC     └── ecommerce (schema)
-# MAGIC         ├── customers   (100 rows)
-# MAGIC         ├── products    (50 rows)
-# MAGIC         └── orders      (200 rows)
+# MAGIC         ├── customers    (100 rows)
+# MAGIC         ├── products     (50 rows)
+# MAGIC         ├── inventory    (50 rows - one per product)
+# MAGIC         ├── orders       (22 rows)
+# MAGIC         └── order_items  (~55 rows - line items per order)
 # MAGIC ```
 # MAGIC
 # MAGIC > 📖 **Docs**: [Manage branches](https://docs.databricks.com/aws/en/oltp/projects/manage-branches) | [API Reference](https://docs.databricks.com/api/workspace/postgres)
@@ -256,35 +258,33 @@ except Exception as e:
 # MAGIC %md
 # MAGIC ## Step 4: Seed the E-Commerce Schema
 # MAGIC
-# MAGIC We'll create 3 tables that model a simple e-commerce application:
+# MAGIC We'll create 5 tables that model a realistic e-commerce application:
 # MAGIC
 # MAGIC ```
-# MAGIC ┌──────────────┐     ┌──────────────┐
-# MAGIC │  customers   │     │   products   │
-# MAGIC │──────────────│     │──────────────│
-# MAGIC │ id (PK)      │     │ id (PK)      │
-# MAGIC │ name         │     │ name         │
-# MAGIC │ email        │     │ price        │
-# MAGIC │ created_at   │     │ category     │
-# MAGIC └──────────────┘     └──────────────┘
-# MAGIC                            
-# MAGIC             ┌──────────────┐ 
-# MAGIC             │   orders     │
-# MAGIC             │──────────────│
-# MAGIC             │ id (PK)      │
-# MAGIC             │ customer_id  │───→ customers.id
-# MAGIC             │ quantity        │
-# MAGIC             │ total    │
-# MAGIC             │ currency     │
-# MAGIC             │ order_date    │
-# MAGIC             │ status       │
-# MAGIC             │ created_at   │
-# MAGIC             └──────────────┘
-# MAGIC
+# MAGIC ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+# MAGIC │  customers   │     │   products   │     │  inventory   │
+# MAGIC │──────────────│     │──────────────│     │──────────────│
+# MAGIC │ id (PK)      │     │ id (PK)      │◄────│ product_id   │
+# MAGIC │ name         │     │ name         │     │ quantity     │
+# MAGIC │ email        │     │ price        │     │ warehouse    │
+# MAGIC │ created_at   │     │ category     │     │ reorder_lvl  │
+# MAGIC └──────┬───────┘     └──────┬───────┘     │ last_restock │
+# MAGIC        │                    │              └──────────────┘
+# MAGIC        │                    │
+# MAGIC ┌──────┴───────┐  ┌─────┴─────────┐
+# MAGIC │   orders     │  │ order_items    │
+# MAGIC │──────────────│  │───────────────│
+# MAGIC │ id (PK)      │  │ id (PK)       │
+# MAGIC │ customer_id  │  │ order_id      │
+# MAGIC │ order_date   │  │ product_id    │
+# MAGIC │ status       │  │ quantity      │
+# MAGIC │ total        │  │ unit_price    │
+# MAGIC │ currency     │  │ line_total    │
+# MAGIC └──────────────┘  └───────────────┘
 # MAGIC ```
 # MAGIC
-# MAGIC > 💡 This schema is intentionally simple — the scenarios will evolve it
-# MAGIC > (adding columns, backfilling data) to demonstrate branching workflows.
+# MAGIC > 💡 This schema is intentionally rich — the scenarios will evolve it
+# MAGIC > (adding columns, new tables, backfilling data) to demonstrate branching workflows.
 
 # COMMAND ----------
 
@@ -299,6 +299,7 @@ SET search_path TO {db_schema};
 
 -- Drop tables if they exist (idempotent)
 DROP TABLE IF EXISTS {db_schema}.order_items CASCADE;
+DROP TABLE IF EXISTS {db_schema}.inventory CASCADE;
 DROP TABLE IF EXISTS {db_schema}.orders CASCADE;
 DROP TABLE IF EXISTS {db_schema}.products CASCADE;
 DROP TABLE IF EXISTS {db_schema}.customers CASCADE;
@@ -319,17 +320,38 @@ CREATE TABLE {db_schema}.products (
     category VARCHAR(50)
 );
 
--- Orders
-CREATE TABLE IF NOT EXISTS {db_schema}.orders (
+-- Inventory (stock levels per product)
+CREATE TABLE {db_schema}.inventory (
+    id SERIAL PRIMARY KEY,
+    product_id INT NOT NULL REFERENCES {db_schema}.products(id),
+    quantity INT NOT NULL DEFAULT 0,
+    warehouse VARCHAR(50) NOT NULL DEFAULT 'US-East',
+    reorder_level INT NOT NULL DEFAULT 10,
+    last_restocked TIMESTAMP DEFAULT NOW(),
+    UNIQUE(product_id, warehouse)
+);
+
+-- Orders (header)
+CREATE TABLE {db_schema}.orders (
     id          SERIAL PRIMARY KEY,
-    customer_id     INT             NOT NULL REFERENCES {db_schema}.customers,
-    product_id  INT             NOT NULL REFERENCES {db_schema}.products,
+    customer_id INT             NOT NULL REFERENCES {db_schema}.customers(id),
+    product_id  INT             NOT NULL REFERENCES {db_schema}.products(id),
     quantity    INT             NOT NULL DEFAULT 1,
-    total NUMERIC(10, 2)  NOT NULL,
+    total       NUMERIC(10, 2)  NOT NULL,
     currency    VARCHAR(3)      NOT NULL DEFAULT 'USD',
     order_date  TIMESTAMP       NOT NULL DEFAULT NOW(),
     status      VARCHAR(20)     NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled'))
+);
+
+-- Order Items (line items per order)
+CREATE TABLE {db_schema}.order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES {db_schema}.orders(id) ON DELETE CASCADE,
+    product_id INT NOT NULL REFERENCES {db_schema}.products(id),
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price NUMERIC(10, 2) NOT NULL,
+    line_total NUMERIC(10, 2) NOT NULL
 );
 """
 
@@ -339,6 +361,7 @@ with conn.cursor() as cur:
 print(f"✅ Schema '{db_schema}' created with tables:")
 print(f"   • {db_schema}.customers")
 print(f"   • {db_schema}.products")
+print(f"   • {db_schema}.inventory")
 print(f"   • {db_schema}.orders")
 print(f"   • {db_schema}.order_items")
 
@@ -350,8 +373,9 @@ print(f"   • {db_schema}.order_items")
 # MAGIC We'll insert realistic e-commerce data:
 # MAGIC - **100 customers** with unique names and emails
 # MAGIC - **50 products** across 5 categories (Electronics, Clothing, Books, Home, Sports)
-# MAGIC - **200 orders** with varying statuses (pending, confirmed, shipped, delivered)
-# MAGIC - **~500 order items** linking orders to products
+# MAGIC - **50 inventory records** with stock levels and warehouse locations
+# MAGIC - **22 orders** with varying statuses and currencies
+# MAGIC - **~55 order items** (line items per order, 1–4 items each)
 # MAGIC
 # MAGIC > 💡 This data will be used across all scenarios. Scenario 2 will add a
 # MAGIC > `loyalty_tier` column and backfill it based on order history.
@@ -456,8 +480,68 @@ with conn.cursor() as cur:
     ORDER BY o.id;
     """)
     cols, rows = [d[0] for d in cur.description], cur.fetchall()
-    
-print(f"✅ Inserted {len(rows)} orders") 
+
+print(f"✅ Inserted {len(rows)} orders")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Seed Inventory & Order Items
+
+# COMMAND ----------
+
+with conn.cursor() as cur:
+
+    # --- Inventory (50 products × 1 warehouse each) ---
+    warehouses = ["US-East", "US-West", "EU-Central"]
+    inventory_rows = []
+    for product_id in range(1, 51):
+        qty = random.randint(0, 200)
+        wh = warehouses[product_id % len(warehouses)]
+        reorder = random.choice([5, 10, 15, 20])
+        inventory_rows.append((product_id, qty, wh, reorder))
+
+    cur.executemany(
+        f"INSERT INTO {db_schema}.inventory (product_id, quantity, warehouse, reorder_level) "
+        f"VALUES (%s, %s, %s, %s)",
+        inventory_rows
+    )
+    print(f"✅ Inserted {len(inventory_rows)} inventory records")
+
+    # --- Order Items (line items for each order) ---
+    # First get the order count
+    cur.execute(f"SELECT id, product_id, quantity, total FROM {db_schema}.orders ORDER BY id")
+    orders = cur.fetchall()
+
+    order_items = []
+    for order_id, orig_product_id, orig_qty, orig_total in orders:
+        # Each order gets 1–4 line items
+        num_items = random.randint(1, 4)
+        product_ids = random.sample(range(1, 51), num_items)
+        # Make sure the original product is included
+        if orig_product_id not in product_ids:
+            product_ids[0] = orig_product_id
+
+        remaining_total = float(orig_total)
+        for i, pid in enumerate(product_ids):
+            qty = random.randint(1, 3)
+            if i == len(product_ids) - 1:
+                # Last item gets the remaining total
+                unit_price = round(max(remaining_total / qty, 1.00), 2)
+                line_total = round(unit_price * qty, 2)
+            else:
+                unit_price = round(random.uniform(9.99, 199.99), 2)
+                line_total = round(unit_price * qty, 2)
+                remaining_total -= line_total
+
+            order_items.append((order_id, pid, qty, unit_price, line_total))
+
+    cur.executemany(
+        f"INSERT INTO {db_schema}.order_items (order_id, product_id, quantity, unit_price, line_total) "
+        f"VALUES (%s, %s, %s, %s, %s)",
+        order_items
+    )
+    print(f"✅ Inserted {len(order_items)} order items")
 
 # COMMAND ----------
 
@@ -475,7 +559,7 @@ print("=" * 60)
 
 with conn.cursor() as cur:
     # Table row counts
-    tables = ["customers", "products", "orders"]
+    tables = ["customers", "products", "inventory", "orders", "order_items"]
     print(f"\n📊 Tables (schema: {db_schema}):")
     for table in tables:
         cur.execute(f"SELECT count(*) FROM {db_schema}.{table}")

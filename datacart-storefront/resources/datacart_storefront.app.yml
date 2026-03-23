@@ -1,0 +1,6 @@
+resources:
+  apps:
+    datacart_storefront:
+      name: "datacart-storefront"
+      description: "DataCart E-Commerce Storefront - Lakebase Branching Workshop"
+      source_code_path: ..

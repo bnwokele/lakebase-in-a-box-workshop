@@ -1,0 +1,743 @@
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC ![DB Academy](./Includes/images/db-academy.png)
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC # Roles, Permissions and Authentication
+-- MAGIC
+-- MAGIC This notebook provides comprehensive introduction on how permissions are handled in Lakebase. We will discuss the two main layers that we have: workspace layer and database layer.
+-- MAGIC
+-- MAGIC Then in the second part of the lab we will explore the different authentication methods available, how to set up them, and what are the best scenarios to use each of them.
+-- MAGIC
+-- MAGIC ## Learning Objectives
+-- MAGIC
+-- MAGIC By the end of this lecture, you will be able to:
+-- MAGIC 1. **Understand the two permission layers:** workspace and database. And apply them in the previously created project.
+-- MAGIC 2. **Manage project permissions** using project permissions to grant access to Databricks identities, groups, and service principals for performing actions such as creating branches, managing computes, and viewing connection details
+-- MAGIC 3. **Manage Postgres roles** by creating OAuth and password-based Postgres roles for database access.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## A. PERMISSION LAYERS
+-- MAGIC
+-- MAGIC In order to understand better how the permissions work for Lakebase projects, let's start with the following analogy :
+-- MAGIC
+-- MAGIC ![postgre_editor.png](./Includes/images/core_concepts/security_layers.jpg)
+-- MAGIC
+-- MAGIC - **Workspace Layer (The House Key)**: Controls who can enter the house, renovate the kitchen, or pay the electric bill. In Databricks, this is who can manage the project (restart compute, create branches, delete the project).
+-- MAGIC
+-- MAGIC
+-- MAGIC - **Database Layer (The Safe Combination)**: Just because you are in the house doesn't mean you can open the safe. In Databricks, this is standard PostgreSQL security. It controls who can query tables, insert/update/delete data, manage schemas.
+-- MAGIC
+-- MAGIC
+-- MAGIC <table style="border-collapse: collapse; width: 100%; border: 2px solid #5c5c5c;">
+-- MAGIC   <thead>
+-- MAGIC     <tr style="background-color: #f2f2f2;">
+-- MAGIC       <th style="border: 1px solid #5c5c5c; text-align: left; padding: 12px; font-weight: bold;">Layer</th>
+-- MAGIC       <th style="border: 1px solid #5c5c5c; text-align: left; padding: 12px; font-weight: bold;">Authentication</th>
+-- MAGIC       <th style="border: 1px solid #5c5c5c; text-align: left; padding: 12px; font-weight: bold;">Interfaces</th>
+-- MAGIC       <th style="border: 1px solid #5c5c5c; text-align: left; padding: 12px; font-weight: bold;">What it controls</th>
+-- MAGIC     </tr>
+-- MAGIC   </thead>
+-- MAGIC   <tbody>
+-- MAGIC     <tr>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;"><strong>Workspace</strong></td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">Workspace OAuth tokens</td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">REST API, Databricks CLI, Databricks SDKs (Python, Java, Go), Terraform</td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">Platform-level actions, such as creating branches, managing computes, and managing project settings.
+-- MAGIC
+-- MAGIC </td>
+-- MAGIC     </tr>
+-- MAGIC     <tr>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;"><strong>Database</strong></td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">OAuth database tokens OR Postgres passwords</td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">Postgres clients (psql, pgAdmin), drivers (psycopg, JDBC), Data API</td>
+-- MAGIC       <td style="border: 1px solid #5c5c5c; text-align: left; padding: 10px;">Who can access data within the database itself.</td>
+-- MAGIC     </tr>
+-- MAGIC   </tbody>
+-- MAGIC </table>
+-- MAGIC
+-- MAGIC Is important to mention that these two layers have **no automatic synchronization**. You can grant these permissions independently or together, depending on your organization's requirements.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## A.2 Workspace Layer
+-- MAGIC
+-- MAGIC This layer will allow you to grant project permissions so users can work with Lakebase platform resources.
+-- MAGIC
+-- MAGIC **By default all workspace users inherit CAN CREATE permission, which allows viewing and creating projects.** To grant additional access to your project's resources and databases, you must explicitly assign CAN USE or CAN MANAGE.
+-- MAGIC
+-- MAGIC Additional to the default **CAN CREATE** mentioned above, we will have two more additional permission levels:
+-- MAGIC
+-- MAGIC - **CAN USE**: View and use project resources (connect, list, view) without creating or managing them
+-- MAGIC
+-- MAGIC - **CAN MANAGE**: Full control over project configuration and resources
+-- MAGIC
+-- MAGIC For a complete list of what actions each permission level allows, see [Lakebase project ACLs](https://docs.databricks.com/aws/en/security/auth/access-control/#database-project)
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## A.3 Database Layer
+-- MAGIC
+-- MAGIC Postgres role permissions control who can access data within the database itself.
+-- MAGIC
+-- MAGIC When you create a project, Lakebase creates several Postgres roles in the project:
+-- MAGIC
+-- MAGIC - A Postgres role for the project owner's Databricks identity (for example, `user@databricks.com`), which owns the default `databricks_postgres` database
+-- MAGIC - A `databricks_superuser` administrative role
+-- MAGIC - Several [system-managed roles](https://docs.databricks.com/aws/en/oltp/projects/postgres-roles?language=UI#system-roles-created-by-databricks) are also created. These are internal roles used by Databricks services for management, monitoring, and data operations.
+-- MAGIC
+-- MAGIC
+-- MAGIC Lakebase support two type of Postgres roles for database access:
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/postgres_roles.png" alt="postgre_editor.png" width="900"/>
+-- MAGIC
+-- MAGIC - **OAuth roles for Databricks identities**: Create these using the `databricks_auth` extension and SQL. Enables Databricks identities (users, service principals, and groups) to connect using OAuth tokens.
+-- MAGIC
+-- MAGIC - **Native Postgres password roles**: Create these using the Lakebase UI or SQL. Use any valid role name with password authentication.
+-- MAGIC
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## B.Creating Postgres Roles
+-- MAGIC
+-- MAGIC Now that we understand the two permission layers, let's get hands-on with the **Database Layer**. In this section, we will create both types of Postgres roles: OAuth-based roles and native password roles.
+-- MAGIC
+-- MAGIC <div style="background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 12px; margin: 10px 0;">
+-- MAGIC <strong>Important:</strong> The <code>databricks_create_role()</code> function creates a Postgres role with <strong>LOGIN permission only</strong>. After creating the role, you must explicitly grant database privileges (covered in Section C).
+-- MAGIC </div>
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### B.1 Setting Up the `databricks_auth` Extension
+-- MAGIC
+-- MAGIC Before creating OAuth roles, each database must have the `databricks_auth` extension installed. This extension provides the `databricks_create_role()` function that links Databricks identities to Postgres roles.
+-- MAGIC
+-- MAGIC Run the following command against your Lakebase database:
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>CREATE EXTENSION IF NOT EXISTS databricks_auth;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### B.2 Creating an OAuth Role for a Databricks User
+-- MAGIC
+-- MAGIC Use the `databricks_create_role()` function to create Postgres roles for Databricks identities. The function accepts two parameters:
+-- MAGIC - **identity_name**: The Databricks username, service principal ID, or group name
+-- MAGIC - **identity_type**: One of `'USER'`, `'SERVICE_PRINCIPAL'`, or `'GROUP'`
+-- MAGIC
+-- MAGIC **Prerequisites:**
+-- MAGIC - You must have `CREATE` and `CREATE ROLE` permissions on the database
+-- MAGIC - You must be authenticated as a Databricks identity with a valid OAuth token
+-- MAGIC - Native Postgres sessions **cannot** create OAuth roles
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC - Create an OAuth role for a Databricks user
+-- MAGIC - Replace with the email of a colleague in your workspace
+-- MAGIC
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('colleague@your-company.com', 'USER');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC You can also create roles for **service principals** and **groups**:
+-- MAGIC
+-- MAGIC
+-- MAGIC - For a service principal (use the application/client ID)
+-- MAGIC
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('8c01cfb1-62c9-4a09-88a8-e195f4b01b08', 'SERVICE_PRINCIPAL');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC - For a Databricks group (case-sensitive, must match exactly)
+-- MAGIC
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>SELECT databricks_create_role('Data Engineers', 'GROUP');</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+-- MAGIC
+-- MAGIC <div style="background-color: #fff3cd; border-left: 6px solid #ffc107; padding: 12px; margin: 10px 0;">
+-- MAGIC
+-- MAGIC <strong>Group-based authentication tip:</strong> When you create a role for a group, <strong>all members</strong> of that Databricks group can authenticate using the group's role name and their own individual OAuth token. This is the recommended approach for managing permissions at scale.
+-- MAGIC </div>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### B.3 Creating a Native Postgres Password Role
+-- MAGIC
+-- MAGIC For external applications or non-Databricks users, you can create traditional Postgres roles with password authentication.
+-- MAGIC
+-- MAGIC Passwords must have at least **12 characters** with a mix of lowercase, uppercase, numbers, and symbols (minimum 60-bit entropy).
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC - Create a native Postgres password role
+-- MAGIC - Replace with your desired role name and a secure password
+-- MAGIC
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>CREATE ROLE app_readonly_user WITH LOGIN PASSWORD 'Ch@ngeMe_Secur3!2025';</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## C. Granting Database Permissions
+-- MAGIC
+-- MAGIC A newly created Postgres role has **LOGIN permission only** and **no database privileges**. You must explicitly grant access at the appropriate level.
+-- MAGIC
+-- MAGIC Lakebase uses standard PostgreSQL `GRANT` / `REVOKE` commands. Permissions can be assigned at three levels:
+-- MAGIC
+-- MAGIC <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin: 10px 0;">
+-- MAGIC <strong>Permission Hierarchy:</strong><br><br>
+-- MAGIC <code>Database</code> &rarr; <code>Schema</code> &rarr; <code>Tables / Sequences / Functions</code><br><br>
+-- MAGIC A user needs <strong>CONNECT</strong> on the database, <strong>USAGE</strong> on the schema, <strong>and</strong> the specific table privilege (SELECT, INSERT, etc.) to actually access data.
+-- MAGIC </div>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C.1 Database-Level Permissions
+-- MAGIC
+-- MAGIC Database-level permissions control whether a role can connect to and create objects within a database.
+-- MAGIC
+-- MAGIC | Privilege | Description |
+-- MAGIC |-----------|------------|
+-- MAGIC | `CONNECT` | Allows the role to connect to the database |
+-- MAGIC | `CREATE` | Allows creating new schemas in the database |
+-- MAGIC | `TEMPORARY` | Allows creating temporary tables |
+-- MAGIC | `ALL PRIVILEGES` | Grants CONNECT + CREATE + TEMPORARY |
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C.2 Schema-Level Permissions
+-- MAGIC
+-- MAGIC Schema-level permissions control access to a namespace within a database. A role needs **USAGE** on a schema before it can access any objects inside it.
+-- MAGIC
+-- MAGIC | Privilege | Description |
+-- MAGIC |-----------|------------|
+-- MAGIC | `USAGE` | Allows accessing objects within the schema (required for any table access) |
+-- MAGIC | `CREATE` | Allows creating new tables, views, and other objects in the schema |
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C.3 Table-Level Permissions
+-- MAGIC
+-- MAGIC Table-level permissions provide the most granular control over data access.
+-- MAGIC
+-- MAGIC | Privilege | Description |
+-- MAGIC |-----------|------------|
+-- MAGIC | `SELECT` | Read data from the table |
+-- MAGIC | `INSERT` | Add new rows to the table |
+-- MAGIC | `UPDATE` | Modify existing rows |
+-- MAGIC | `DELETE` | Remove rows from the table |
+-- MAGIC | `TRUNCATE` | Empty the entire table |
+-- MAGIC | `ALL PRIVILEGES` | Grants all of the above |
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## D.  Viewing and Verifying Permissions
+-- MAGIC
+-- MAGIC After assigning permissions, it is important to verify that roles have the correct access. Lakebase supports standard PostgreSQL catalog queries for auditing roles and their privileges.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D.1 List All Roles and Their Attributes
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- List all roles with their key attributes
+-- MAGIC SELECT
+-- MAGIC   rolname AS "Role Name",
+-- MAGIC   rolcanlogin AS "Can Login",
+-- MAGIC   rolcreatedb AS "Can Create DB",
+-- MAGIC   rolcreaterole AS "Can Create Role",
+-- MAGIC   rolsuper AS "Is Superuser"
+-- MAGIC FROM pg_roles
+-- MAGIC WHERE rolname NOT LIKE 'pg_%'
+-- MAGIC ORDER BY rolname;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D.2 Check Table Permissions for a Specific Role
+-- MAGIC
+-- MAGIC Use the `has_table_privilege()` function to verify what a role can do on each table:
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- Check table-level permissions for 'app_readonly_user'
+-- MAGIC -- Replace role name as needed
+-- MAGIC SELECT
+-- MAGIC   schemaname AS "Schema",
+-- MAGIC   tablename AS "Table",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'SELECT') AS "Can SELECT",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'INSERT') AS "Can INSERT",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'UPDATE') AS "Can UPDATE",
+-- MAGIC   has_table_privilege('app_readonly_user', schemaname || '.' || tablename, 'DELETE') AS "Can DELETE"
+-- MAGIC FROM pg_tables
+-- MAGIC WHERE schemaname = 'public';</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D.3 Check Role Memberships
+-- MAGIC
+-- MAGIC View which roles a specific user belongs to:
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- List all role memberships in the project
+-- MAGIC SELECT
+-- MAGIC   r.rolname AS "Role",
+-- MAGIC   pg_get_userbyid(m.member) AS "Member"
+-- MAGIC FROM pg_auth_members m
+-- MAGIC JOIN pg_roles r ON r.oid = m.roleid
+-- MAGIC ORDER BY r.rolname;</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>-- Check database-level connection permissions
+-- MAGIC SELECT has_database_privilege('app_readonly_user', 'databricks_postgres', 'CONNECT') AS "Can Connect";</code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## F. PLEASE READ: Next Steps
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### F1. Continue Your Learning
+-- MAGIC
+-- MAGIC With your **Lakebase database instance** created, continue to next notebook.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## G. Summary and Key Takeaways
+-- MAGIC
+-- MAGIC In this lab, we covered the two permission layers in Lakebase:
+-- MAGIC
+-- MAGIC 1. **Workspace Layer** - Controls platform-level actions (CAN CREATE, CAN USE, CAN MANAGE)
+-- MAGIC 2. **Database Layer** - Controls data access using standard PostgreSQL roles and privileges
+-- MAGIC
+-- MAGIC For the Database Layer, you learned how to:
+-- MAGIC - Create the `databricks_auth` extension and use `databricks_create_role()` for OAuth-based roles
+-- MAGIC - Create native Postgres password roles for external applications
+-- MAGIC - Grant permissions at the **database**, **schema**, and **table** level
+-- MAGIC - Set up **default privileges** so future tables automatically inherit permissions
+-- MAGIC - **Audit and verify** role permissions using PostgreSQL catalog queries
+-- MAGIC - **Revoke** permissions and **drop** roles when access is no longer needed
+-- MAGIC
+-- MAGIC **Key principle:** These two layers are **independent** - having workspace access does not automatically grant database access, and vice versa. Always configure both layers for your users.

@@ -1,32 +1,10 @@
-# Lakebase In-a-Box Workshop
+# Lakebase-in-a-Box Workshop
 
-This hands-on workshop introduces **Databricks Lakebase** — a fully managed, serverless PostgreSQL database built on open architecture that decouples compute from storage and demonstrates how to leverage its unique capabilities to build and maintain production-grade applications with unprecedented agility.
+This hands-on workshop introduces Databricks Lakebase — a fully managed, serverless PostgreSQL database built on open architecture that decouples compute from storage and demonstrates how to leverage its unique capabilities to build and maintain production-grade applications with unprecedented agility.
 
 You will step into the role of a developer at DataCart, a rapidly growing e-commerce platform. The stakes are high: the "Spring Sale" launch is weeks away, and you and your team needs to roll out international currency support, a new loyalty program, and performance optimizations—all while ensuring the production site stays bulletproof.
 
-## What You'll Learn
-
-| Topic | Description |
-|-------|-------------|
-| **Lakebase Overview** | Understand what lakebase is and its unique architecture |
-| **Roles & Permissions** | Manage workspace-level and database-level access control with OAuth and native Postgres roles |
-| **Database Branching** | Create isolated, zero-copy environments for parallel development using copy-on-write storage |
-| **Point-in-Time Recovery** | Recover from catastrophic errors (e.g. accidental `DROP TABLE`) to any second within a configurable window |
-| **Snapshots** | Create named restore points before planned deployments and migrations |
-| **Monitoring** | Monitor Database using in built performance metrics and graphs |
-| **Reverse ETL** | Sync curated Lakehouse data into Lakebase using Synced Tables |
-
-## Prerequisites
-
-- A Databricks workspace with **Unity Catalog** enabled
-- Permission to create **Lakebase Autoscaling Projects** and **catalogs**
-- Access to a **Serverless SQL Warehouse** (2X-Small is sufficient)
-- A Databricks cluster (for the lab notebooks)
-- Workspace in a region that supports Lakebase Autoscaling
-
-## Workshop Structure
-
-The workshop is organized into sequential lectures and labs. Lectures provide conceptual background; labs give you hands-on practice.
+## What's Included
 
 ### Core Modules
 
@@ -44,25 +22,97 @@ The workshop is organized into sequential lectures and labs. Lectures provide co
 | 4 | `4 Lecture - Point in Time Restore & Snapshots.ipynb` | Lecture | PITR restore windows, snapshot scheduling, and when to use each |
 | 4.1 | `4.1 Lab - Point in Time Recovery (Disaster Management).ipynb` | Lab | Simulate an accidental `DROP TABLE` and recover using Point-in-Time Recovery |
 
-### Bonus Modules
+### Workshop Notebooks
 
-| # | Notebook | Type | Description |
-|---|----------|------|-------------|
-| 5 | `5 Lecture - Monitoring (BONUS).ipynb` | Lecture | Metrics dashboards (RAM, CPU, connections, deadlocks, cache hit rate), active queries, query performance, and system operations |
-| 6 | `6 Lecture Reverse ETL (BONUS).ipynb` | Lecture | Synced Tables, sync modes (Snapshot/Triggered/Continuous), data type mappings, and best practices |
+| Notebook | Topic | What Happens |
+|----------|-------|-------------|
+| **0 Workshop Introduction** | Overview | DataCart scenario, Lakebase architecture, learning objectives |
+| **1.1 Lab Setup Project** | Setup | Creates a Lakebase project and seeds 5 tables (customers, products, inventory, orders, order_items) |
+| **1.2 Lab Connect Storefront** | App Setup | Grants the storefront app's service principal access to the database |
+| **3 Lecture - Database Branching** | Lecture | Branching concepts and architecture |
+| **3.1 Lab Create Branch** | Branching | Creates a dev branch, demonstrates data isolation |
+| **3.2 Lab Parallel Development** | Branching | Three developers work in parallel on isolated branches (loyalty, currency, indexes) |
+| **3.3 Lab Schema to Prod Migration** | Migration | Promotes loyalty features and reviews from branch to production |
+| **3.4 Lab Branch Reset** | Branching | Handles schema drift, resets branch to parent, promotes priority + email_verified |
+| **4.1 Lab Point in Time Recovery** | PITR | Simulates `DROP TABLE orders CASCADE` disaster, recovers via PITR branch |
+| **5.1 Lab Reverse ETL** | Synced Tables | Creates promotions Delta table in Unity Catalog, syncs to Lakebase via reverse ETL |
 
+### DataCart Storefront App
 
-## Getting Started
+A customer-facing e-commerce web application (React + FastAPI) that **evolves in real time** as each lab modifies the database. Located in `datacart-storefront/`.
 
-1. **Import the repo** into your Databricks workspace (Repos > Add Repo)
-2. **Start with `0 Workshop Introduction.py`** to understand the scenario and architecture
-3. **Run `1.1 Lab Setup Project.py`** to provision your Lakebase project and seed the e-commerce data
-4. **Follow the numbered notebooks** in sequence — each builds on the previous one
-5. **Run `99_Cleanup.py`** when you're done to delete your resources and avoid unnecessary costs
+| Feature | Appears After |
+|---------|--------------|
+| Products, stock badges, cart, orders | Lab 1.1 |
+| Star ratings, reviews | Lab 3.3 |
+| Loyalty tier badge, points, "Earn X pts" | Lab 3.3 |
+| Priority badges, verified badge | Lab 3.4 |
+| Graceful degradation during disaster | Lab 4.1 |
+| Sale badges, discount prices, promo deals | Lab 5.1 |
 
-> **Important:** Each workspace supports a maximum of 1,000 Lakebase projects. Always clean up when you're finished.
+## Quick Start
 
-## Documentation
+### Prerequisites
+
+- Databricks workspace with Lakebase support
+- Databricks CLI v0.229.0+ with an authenticated profile
+
+### Setup Steps
+
+1. **Run Lab 1.1** — Creates the Lakebase project and seeds the database
+
+2. **Update `datacart-storefront/app.yaml`** — Set your project name:
+   ```yaml
+   env:
+     - name: ENDPOINT_NAME
+       value: "projects/<project-name>/branches/production/endpoints/primary"
+     - name: LAKEBASE_PROJECT
+       value: "<project-name>"
+   ```
+   Your project name is `lakebase-branching-workshop-<username>` where `<username>` is your
+   email with `.` replaced by `-` and `@domain.com` removed.
+   (e.g., `john.doe@databricks.com` → `lakebase-branching-workshop-john-doe`)
+
+3. **Create the app & add database resource** (do this before deploying):
+   - Compute > Apps > Create App > name it `datacart-storefront`
+   - Settings > Add Resource > Database > select your Lakebase project > Can connect > Save
+
+4. **Deploy the app**:
+   - UI: Compute > Apps > datacart-storefront > Deploy > set source path to `/Workspace/Users/<your-email>/datacart-storefront`
+   - Or CLI: `databricks apps deploy datacart-storefront --source-code-path /Workspace/Users/<your-email>/datacart-storefront -p <profile>`
+   - Or DABs: `databricks bundle deploy && databricks bundle run datacart_storefront`
+
+5. **Run Lab 1.2** — Grants the app's service principal access to the ecommerce schema
+
+6. **Open the storefront** and run through the labs!
+
+## How the Storefront Works
+
+The storefront **auto-detects schema changes** every 30 seconds by querying `information_schema`.
+As each lab adds tables and columns to the production database, new features appear on the
+storefront without any code changes or redeployment.
+
+Key components:
+- **`schema_detector.py`** — Queries `information_schema` with 30s cache, exposes feature flags
+- **`/api/features`** — Returns boolean flags (reviews_active, loyalty_active, promotions_active, etc.)
+- **Frontend** — Polls `/api/features` every 30s, conditionally renders UI elements
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Storefront shows "Loading..." | Check `<app-url>/api/dbtest`. If `PGHOST` is `NOT SET`, redeploy the app. |
+| "Password authentication failed" | Re-add the Lakebase database resource in app settings, then redeploy. |
+| Schema grants missing | Run Lab 1.2 or `GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";` |
+| Spring Sale Deals not showing | Re-run `GRANT ALL ON ALL TABLES` after the synced table is created (Lab 5.1 Step 7). |
+| Orders page shows "Unavailable" | Expected during Lab 4.1 PITR disaster. Resolves after recovery. |
+
+## Extra Setup Documentation (if needed)
+
+- **WORKSHOP_SETUP.md** — Full step-by-step setup guide
+- **APP_DEEP_DIVE.md** — Technical architecture, API reference, design system
+
+## Databricks Documentation
 
 - [Lakebase Overview](https://docs.databricks.com/aws/en/oltp/)
 - [Manage Branches](https://docs.databricks.com/aws/en/oltp/projects/manage-branches)
