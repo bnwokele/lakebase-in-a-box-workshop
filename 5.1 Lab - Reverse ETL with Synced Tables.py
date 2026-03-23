@@ -81,8 +81,8 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Unity Catalog configuration
-UC_CATALOG = "serverless_stable_339b90_catalog"
-UC_SCHEMA = "ecommerce"
+UC_CATALOG = "<add your catalog>"
+UC_SCHEMA = "add your schema"
 UC_TABLE = f"{UC_CATALOG}.{UC_SCHEMA}.promotions"
 
 # Lakebase configuration
