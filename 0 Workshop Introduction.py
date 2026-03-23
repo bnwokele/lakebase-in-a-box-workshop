@@ -56,20 +56,39 @@
 # MAGIC
 # MAGIC | Developer | Team | Task |
 # MAGIC |---|---|---|
-# MAGIC | Developer A | Loyalty Team | Add a new `loyalty_members` table and a `points_balance` column to the `users` table |
+# MAGIC | Developer A | Loyalty Team | Add a new `loyalty_members` table, `loyalty_points` column, and seed product reviews |
 # MAGIC | Developer B | Global Team | Modify the `orders` table to change the `currency` column from a fixed string to a foreign key linked to a new `exchange_rates` table |
 # MAGIC | Developer C | Performance Team | Create new indexes on the `products` table to handle the high-traffic surge expected during the sale |
 # MAGIC
 # MAGIC
 # MAGIC #### The "Code Red" Disaster Scenario
 # MAGIC
-# MAGIC During the final Spring Sale deployment, a DevOps engineer accidentally executes `DROP TABLE inventory_main;` instead of dropping a temporary staging table. The production website immediately begins throwing 500 errors — customers cannot check stock levels or complete purchases, and every second of downtime means thousands of dollars in lost revenue.
+# MAGIC During the final Spring Sale deployment, a DevOps engineer accidentally executes `DROP TABLE orders CASCADE;` instead of dropping a temporary staging table. The production storefront immediately begins throwing errors — customers cannot view their orders or complete purchases, and every second of downtime means thousands of dollars in lost revenue.
 # MAGIC
 # MAGIC In a traditional database, the team would need to find the last nightly backup, provision a new instance, restore the data (which could take hours), and replay logs. With **Lakebase PITR**, the process to handle this is much smoother.
 # MAGIC
+# MAGIC #### The Reverse ETL Scenario
+# MAGIC
+# MAGIC The marketing team has prepared Spring Sale promotions — product discounts, sale badges, and limited-time offers — in a Delta table in the data lakehouse. Using **Lakebase Synced Tables**, these promotions are pushed to the production database and instantly appear on the storefront with sale badges and discounted prices — without any application code changes.
+# MAGIC
+# MAGIC ### The DataCart Storefront
+# MAGIC
+# MAGIC Throughout this workshop, you'll interact with the **DataCart Storefront** — a live customer-facing e-commerce web application connected to your Lakebase project. As you run each lab, the storefront **evolves in real time**:
+# MAGIC
+# MAGIC | Lab | What Happens to the Storefront |
+# MAGIC |-----|-------------------------------|
+# MAGIC | **1.1 Setup** | Basic storefront — products, stock, cart, orders (no ratings yet) |
+# MAGIC | **3.2 Parallel Dev** | No change — branches are isolated from production |
+# MAGIC | **3.3 Schema to Prod** | Star ratings, loyalty badges, "Earn pts" labels appear |
+# MAGIC | **3.4 Branch Reset** | Priority badges on orders, verified badge in navbar |
+# MAGIC | **4.1 PITR Disaster** | Orders page breaks → gracefully degrades → recovers after PITR |
+# MAGIC | **5.1 Reverse ETL** | Sale badges, discount prices, "Spring Sale Deals" section appear |
+# MAGIC
+# MAGIC > The storefront auto-detects schema changes every 30 seconds. No redeployment needed.
+# MAGIC
 # MAGIC ### This Workshop
 # MAGIC
-# MAGIC This workshop places you in the role of a database engineer at **DataCart**, a rapidly growing global e-commerce platform preparing for a major "Spring Sale" launch. You'll experience firsthand how Lakebase branching and PITR address real-world development and operational challenges.
+# MAGIC This workshop places you in the role of a database engineer at **DataCart**, a rapidly growing global e-commerce platform preparing for a major "Spring Sale" launch. You'll experience firsthand how Lakebase branching, PITR, and reverse ETL address real-world development and operational challenges.
 # MAGIC
 # MAGIC ### Key Learning Objectives
 # MAGIC
@@ -77,4 +96,5 @@
 # MAGIC |---|---|
 # MAGIC | **Branching** | Creating isolated environments for parallel schema evolution across multiple developer teams |
 # MAGIC | **Point-in-Time Recovery** | Recovering from catastrophic human error without downtime using PITR |
+# MAGIC | **Reverse ETL** | Serving lakehouse analytics data to applications via synced tables |
 # MAGIC | **Roles & Permissions** | Managing access control across branches to enforce governance |

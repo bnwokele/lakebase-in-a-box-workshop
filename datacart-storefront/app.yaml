@@ -1,0 +1,21 @@
+command:
+  - "python"
+  - "-m"
+  - "uvicorn"
+  - "app:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  - name: ENDPOINT_NAME
+    value: "projects/<project-name>/branches/production/endpoints/primary"
+  - name: LAKEBASE_PROJECT
+    value: "<project-name>"
+  - name: DB_SCHEMA
+    value: "ecommerce"
+
+resources:
+  - name: postgres
+    type: postgres

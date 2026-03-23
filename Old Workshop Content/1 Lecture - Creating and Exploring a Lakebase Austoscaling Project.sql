@@ -1,0 +1,937 @@
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC ![DB Academy](./Includes/images/db-academy.png)
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC # Creating and Exploring a Lakebase Autoscaling PostgreSQL Project
+-- MAGIC ## Overview
+-- MAGIC
+-- MAGIC This notebook provides comprehensive introduction with Databricks Lakebase Autoscaling PostgreSQL, guiding you through the complete lifecycle of creating, configuring, and managing a Lakebase project within the Databricks platform. You'll learn to provision Lakebase resources, create and populate tables using native PostgreSQL commands, monitor your database metrics, and view Postgres system tables.
+-- MAGIC
+-- MAGIC ## Learning Objectives
+-- MAGIC
+-- MAGIC By the end of this lab, you will be able to:
+-- MAGIC 1. **Provision and configure** a Lakebase Autoscaling Database Project with appropriate settings for operational workloads
+-- MAGIC 2. **Create and populate PostgreSQL tables** using native PL/pgSQL commands and PostgreSQL-specific features like SERIAL keys and constraints
+-- MAGIC 3. **Explore PostgreSQL system metadata** through pg_catalog and information_schema to understand database structure and objects
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #ff9800;
+-- MAGIC   background: #fff3e0;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#e65100; margin-bottom:6px;">
+-- MAGIC     Warning - PLEASE READ IF RUNNING IN YOUR OWN WORKSPACE
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC       <ul>
+-- MAGIC         <li>
+-- MAGIC           <strong>When you finish the lab, make sure to delete your Lakebase resources</strong>
+-- MAGIC           to avoid unnecessary costs and to prevent hitting workspace limits.
+-- MAGIC         </li>
+-- MAGIC         <li>
+-- MAGIC           Each workspace supports a <strong>maximum of 1000 Lakebase Autoscaling Database Projects</strong>.
+-- MAGIC           Leaving unused instances running might incur in unnecesary costs as mentioned above.
+-- MAGIC         </li>
+-- MAGIC       </ul>
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## REQUIRED PREREQUISITES
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #f44336;
+-- MAGIC   background: #ffebee;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#c62828; margin-bottom:6px; font-size: 1.1em;">PREREQUISITES</strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC
+-- MAGIC This notebook assumes you have:
+-- MAGIC - Access to a **Serverless SQL Warehouse** (2X-Small is sufficient)
+-- MAGIC - Permission to create a **Lakebase Autoscaling Projects** in your Workspace.
+-- MAGIC - Unity Catalog enabled in your Workspace
+-- MAGIC - Can create a catalog in your Workspace
+-- MAGIC
+-- MAGIC   </div>
+-- MAGIC </div>
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## REQUIRED - SELECT COMPUTE
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #f44336;
+-- MAGIC   background: #ffebee;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#c62828; margin-bottom:6px; font-size: 1.1em;">Select Compute</strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC
+-- MAGIC Before starting this notebook, select the required compute environment listed below.
+-- MAGIC
+-- MAGIC -  **Serverless SQL Warehouse** (2X-Small is sufficient)
+-- MAGIC
+-- MAGIC **NOTE:**  This notebook was **developed and tested using a SQL Warehouse**. Other compute options may work but are not guaranteed to behave the same or support all features demonstrated.
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## A. Classroom Setup
+-- MAGIC
+-- MAGIC No additional classroom setup is required for this lab.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## B. Create and Explore Your Lakebase Autoscaling Database Project
+-- MAGIC
+-- MAGIC In this section, you'll create a new Lakebase Autoscaling Database Project and explore its configuration options.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #1976d2;
+-- MAGIC   background: #e3f2fd;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#0d47a1; margin-bottom:6px;">
+-- MAGIC     Information
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC
+-- MAGIC There are two versions of Lakebase:
+-- MAGIC In this training, we use <strong>Lakebase Autoscaling</strong>. We recommend <strong>Lakebase Autoscaling</strong>, which supports additional features compared to <strong>Lakebase Provisioned</strong>. Use this version only if Autoscaling is not available in your region or you need a specific feature only available in the provisioned offering
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### B1. Create Your Lakebase Autoscaling Project
+-- MAGIC
+-- MAGIC Complete the following steps to create your Lakebase database:
+-- MAGIC
+-- MAGIC 1. Use the apps switcher to navigate to **Lakebase Postgress**. 
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/lakebase_autoscaling.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="255">
+-- MAGIC
+-- MAGIC 2. Click **New project**
+-- MAGIC
+-- MAGIC 3. Configure your project settings:
+-- MAGIC    - **Name:** `yourname-lakebase-db`
+-- MAGIC    - **Postgres version:** Select the Postgres version you want to use. (17 was used for this workshop)
+-- MAGIC
+-- MAGIC 4. The **Region** for your Lakebase project is set to your Databricks workspace region and cannot be modified
+-- MAGIC
+-- MAGIC 5. By default **a new project includes**:
+-- MAGIC    - A single `production` branch (the default branch)
+-- MAGIC    - A single **primary read-write compute** associated with the branch
+-- MAGIC    - A Postgres database (named `databricks_postgres`)
+-- MAGIC    - A Postgres role for your Databricks identity (for example, `user@databricks.com`)
+-- MAGIC       
+-- MAGIC 6. Click **Create**
+-- MAGIC
+-- MAGIC 7. You can see how fast the **compute** in the production branch gets active, almost instant provision.
+-- MAGIC
+-- MAGIC 8. Next, continue to the next section.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ### B2. Explore Lakebase Autoscaling Settings 
+-- MAGIC
+-- MAGIC On the landing page after clicking **Create**, you will see by default the **Dashboard** view, this view includes the following sections Monitoring, Branches and Project Setting. 
+-- MAGIC
+-- MAGIC Branching and Monitoring will be covered in the next notebooks, so lets focus on the Settings, you can access by clicking on **Manage** or on the menu on your left side by clicking on **Settings**.
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/landing_page.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="1500">
+-- MAGIC
+-- MAGIC #### Settings Tab
+-- MAGIC Select the **Settings** tab. This section provides key information about your Lakebase project, including:
+-- MAGIC
+-- MAGIC - **General** - Includes the **name** of your Lakebase project, you can modify it here if needed. Also you will see the **Project ID** in this section this is the unique identifier for your project.
+-- MAGIC - **Compute Default** - These settings are used when you create new primary computes. For this workshop lets set this to:
+-- MAGIC   - Min:`0.5 CU (~1 GB RAM)`
+-- MAGIC   - Max: `2 CU (~4 GB RAM)`
+-- MAGIC   - Setting both to the same value, won't allow your compute to autoscale.
+-- MAGIC   - Set the Scale to zero to 5 minutes of inactivity (default)
+-- MAGIC   - Click on **Save**
+-- MAGIC   - Later on the branching and read replicas section you will see how these values are applied automatically.
+-- MAGIC <img src="./Includes/images/core_concepts/compute_defaults.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="600">
+-- MAGIC
+-- MAGIC - **Instant Restore** - this is the restore window length for your project, it allows you to do point-in-time restore, querying data at a point in time and branching from past states. Increasing the restore window will increase your storage costs, and will affect all the branches in your project.
+-- MAGIC
+-- MAGIC - **Project Permissions**:
+-- MAGIC   - Control who can access and manage your Lakebase project by granting permission to Databricks users, groups or service principals
+-- MAGIC   - Determine what actions users can perform within the project, such as creating branches, managing computes, and viewing connection details.
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #1976d2;
+-- MAGIC   background: #e3f2fd;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#0d47a1; margin-bottom:6px;">
+-- MAGIC     ⓘ NOTE
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC     <strong>Project permissions and database access are separate</strong>
+-- MAGIC     <br><br>
+-- MAGIC     Project permissions control Lakebase platform actions, while database access is controlled by Postgres roles and their associated permissions. See <a href="#" style="color: #1976d2; text-decoration: underline;">Manage Postgres roles</a> and <a href="#" style="color: #1976d2; text-decoration: underline;">Manage permissions</a>.
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### B3. Connect to your database
+-- MAGIC
+-- MAGIC 1. Use the **Branch Selector** and select the branch you want to connect to.
+-- MAGIC
+-- MAGIC 2. For this lab, lets select the `production` branch.
+-- MAGIC
+-- MAGIC 3. Click the **Connect** button 
+-- MAGIC
+-- MAGIC 4. The following window will open automatically:
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/connection_database.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="400">
+-- MAGIC
+-- MAGIC 5. Here you can select the following options:
+-- MAGIC     - Database (An existing or you can create a new one).
+-- MAGIC     - Role: this option allows you to select the authentication method, could be an OAuth Role or a Native Postgres role ([Choose your authentication method](https://docs.databricks.com/aws/en/oltp/projects/connect-overview#choose-your-authentication-method))
+-- MAGIC     - Framework dropdown: you can select the desire framework and programming language to connect. You will get the connection snippets for each language also.
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC **IMPORTANT:** Make sure to review the full documentation on how to connect to a Lakebase Autoscaling Project in the following link [Connect to your database](https://docs.databricks.com/aws/en/oltp/projects/connect) 
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## C. Create a Table in Your Lakebase PostgreSQL Database
+-- MAGIC
+-- MAGIC Now you'll create and populate tables directly in your **Lakebase PostgreSQL** database using native `PL/pgSQL` commands.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C1. Understanding the Data Flow
+-- MAGIC
+-- MAGIC In production environments, applications (like Databricks Apps) typically write transactional data to **Lakebase OLTP databases**. For example:
+-- MAGIC - Customer intake forms
+-- MAGIC - Order processing systems  
+-- MAGIC - Real-time inventory updates
+-- MAGIC - User activity tracking
+-- MAGIC
+-- MAGIC For this training, you'll manually create and populate tables to simulate this workflow for an introduction to **Lakebase**.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ### C2. Create the Customer Leads Postgres Table
+-- MAGIC
+-- MAGIC 1. Use the Branch Selector and select the `production` branch.
+-- MAGIC
+-- MAGIC 2. In the left panel select **SQL Editor**, you will get the following view, where you can select the compute and the database you want to use to run your SQL commands:
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/sql_editor.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="600">
+-- MAGIC
+-- MAGIC 3. Copy the code below and execute the `CREATE TABLE` statement (using `PL/pgSQL`):
+-- MAGIC
+-- MAGIC     - **PostgreSQL Features Used:**
+-- MAGIC       - `SERIAL` - Auto-incrementing primary key
+-- MAGIC       - `TIMESTAMPTZ` - Timezone-aware timestamps
+-- MAGIC       - `CHECK` constraint - Data validation
+-- MAGIC       - `UNIQUE` constraint - Email uniqueness
+-- MAGIC
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC -- Create customer leads table with PostgreSQL-specific features
+-- MAGIC CREATE TABLE public.customer_leads (
+-- MAGIC     lead_id        SERIAL PRIMARY KEY,
+-- MAGIC     first_name     VARCHAR(50) NOT NULL,
+-- MAGIC     last_name      VARCHAR(50) NOT NULL,
+-- MAGIC     email          VARCHAR(100) UNIQUE NOT NULL,
+-- MAGIC     phone_number   VARCHAR(20),
+-- MAGIC     company        VARCHAR(100),
+-- MAGIC     industry       VARCHAR(50),
+-- MAGIC     state          VARCHAR(30),
+-- MAGIC     lead_quality   VARCHAR(20) CHECK (lead_quality IN ('High', 'Medium', 'Low')),
+-- MAGIC     notes          TEXT,
+-- MAGIC     submit_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+-- MAGIC );
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+-- MAGIC 3. View the new table in the UI:
+-- MAGIC     - Click on the **Tables** option on the left panel.
+-- MAGIC     - Select the database, in this case `databricks_postgres`
+-- MAGIC     - Select the schema, in this case `public`
+-- MAGIC     - Here you should see your **customer_leads** PostgreSQL table 
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C3. Insert Sample Data
+-- MAGIC
+-- MAGIC Populate the **customer_leads** table with realistic customer lead data.
+-- MAGIC
+-- MAGIC 1. Copy the code below and execute it in the SQL Editor to insert data into your **customer_leads** table.
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC -- Insert sample customer leads
+-- MAGIC INSERT INTO public.customer_leads 
+-- MAGIC (first_name, last_name, email, phone_number, company, industry, state, lead_quality, notes)
+-- MAGIC VALUES
+-- MAGIC ('Emma', 'Rodriguez', 'emma.rodriguez@technova.com', '555-555-1245', 'TechNova', 'Technology', 'North Carolina', 'High', 'Interested in Lakehouse migration for real-time analytics.'),
+-- MAGIC ('Liam', 'Patel', 'liam.patel@finedge.com', '555-555-9982', 'FinEdge', 'Finance', 'Texas', 'Medium', 'Requested demo for regulatory compliance use cases.'),
+-- MAGIC ('Sophia', 'Chen', 'sophia.chen@healthiq.com', '555-555-3075', 'HealthIQ', 'Healthcare', 'California', 'High', 'Wants Unity Catalog integration for patient data governance.'),
+-- MAGIC ('Noah', 'Williams', 'noah.williams@eduspark.edu', '555-555-4421', 'EduSpark', 'Education', 'Massachusetts', 'Low', 'Early exploration phase - follow up next quarter.'),
+-- MAGIC ('Ava', 'Johnson', 'ava.johnson@retailworks.com', '555-555-2010', 'RetailWorks', 'Retail', 'Illinois', 'Medium', 'Interested in AI-powered BI dashboards for inventory.'),
+-- MAGIC ('Ethan', 'Kim', 'ethan.kim@manucore.com', '555-555-1170', 'ManuCore', 'Manufacturing', 'Washington', 'High', 'Needs IoT analytics platform for predictive maintenance.'),
+-- MAGIC ('Olivia', 'Nguyen', 'olivia.nguyen@finlink.com', '555-555-8844', 'FinLink', 'Finance', 'Florida', 'Low', 'Exploring options for fraud detection analytics.'),
+-- MAGIC ('James', 'Davis', 'james.davis@healthbridge.org', '555-555-9371', 'HealthBridge', 'Healthcare', 'Georgia', 'Medium', 'Requested cost analysis for HIPAA-compliant analytics.'),
+-- MAGIC ('Isabella', 'Lopez', 'isabella.lopez@learnlab.edu', '555-555-4433', 'LearnLab', 'Education', 'Nevada', 'High', 'Asked for student performance analytics demo.'),
+-- MAGIC ('Benjamin', 'Carter', 'benjamin.carter@retailhub.com', '555-555-9911', 'RetailHub', 'Retail', 'New York', 'Medium', 'Interested in customer behavior analytics with Delta tables.');
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### C4. Verify Postgres Table Creation
+-- MAGIC
+-- MAGIC 1. Confirm that your data was inserted successfully by executing the following query in the SQL Editor using your **PostgresSQL** compute:
+-- MAGIC
+-- MAGIC **Result:** 10 rows with auto-generated IDs and timestamps.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC -- Query the customer leads table
+-- MAGIC SELECT *
+-- MAGIC FROM public.customer_leads;
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 2. Using the same SQL Editor page include a second query:
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC -- Get the distinct values in the industry column
+-- MAGIC SELECT DISTINCT industry 
+-- MAGIC FROM public.customer_leads;
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC Running multiple query statements at once returns a separate result set for each statement. The result sets are displayed in separate tabs, numbered in order of execution.
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ### C5. Query from SQL Editor in Lakehouse
+-- MAGIC For this section make sure that you open a new window and select the **Lakehouse** option from the apps switcher.
+-- MAGIC
+-- MAGIC There are two different ways to query a Lakebase database from the normal SQL Editor in the Lakehouse UI:
+-- MAGIC
+-- MAGIC #### Connect directly to Lakebase compute
+-- MAGIC 1. Open the SQL editor by clicking SQL Editor in the sidebar.
+-- MAGIC
+-- MAGIC 2. From the Connect drop-down menu, select **More...**
+-- MAGIC
+-- MAGIC <img src="./Includes/images/core_concepts/select_more.png"
+-- MAGIC      alt="Lakebase Autoscaling"
+-- MAGIC      width="600">
+-- MAGIC
+-- MAGIC 3. On the the **Attach to an existing compute resource** dialog, select **Lakebase Postgres**, choose the **Autoscaling** option, and then select your **Project** and **Branch**
+-- MAGIC
+-- MAGIC 4. Click **Attach** to connect.
+-- MAGIC
+-- MAGIC 5. You can now run your queries, to create tables, insert data and query it. Use the following example to retrieve data from the table we already created it:
+-- MAGIC
+-- MAGIC     `SELECT company, industry, notes
+-- MAGIC     FROM public.customer_leads
+-- MAGIC     WHERE lead_quality = 'High';`
+-- MAGIC
+-- MAGIC
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #ff9800;
+-- MAGIC   background: #fff3e0;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#e65100; margin-bottom:6px;">
+-- MAGIC     IMPORTANT - Limitations with direct connection:
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC       <ul>
+-- MAGIC         <li>
+-- MAGIC           <strong>Federated queries not supported</strong>: You can only query the connected Lakebase project and branch. You can't combine Lakebase data with other Unity Catalog tables in a single query.
+-- MAGIC         </li>
+-- MAGIC         <li>
+-- MAGIC           <strong>Postgres meta-commands not supported:</strong> The Postgres meta-commands (like \dt, \d, \l), are only supported in the Lakebase SQL Editor
+-- MAGIC         </li>
+-- MAGIC       </ul>
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+-- MAGIC
+-- MAGIC #### Register database in Unity Catalog
+-- MAGIC
+-- MAGIC This method will register your Lakebase database in Unity Catalog, allowing you to do federated queries and unify governance across your data sources.
+-- MAGIC
+-- MAGIC Since you created the Lakebase project the additional requirements are: 
+-- MAGIC
+-- MAGIC - **Unity Catalog privileges:** `CREATE CATALOG` privileges on the UC Metastore.
+-- MAGIC - **SQL Warehouse**: A serverless SQL warehouse to query the registered catalog
+-- MAGIC
+-- MAGIC Other users will require a postgres role and also Database permissions to perform the registration of the database in Unity Catalog.
+-- MAGIC
+-- MAGIC 1. In Catalog Explorer, click the plus icon and **Create a catalog**.
+-- MAGIC
+-- MAGIC 2. Enter a catalog name (for example, `yourname-lakebase-catalog`).
+-- MAGIC
+-- MAGIC 3. Select **Lakebase Postgres** as the catalog type, then choose the **Autoscaling** option.
+-- MAGIC
+-- MAGIC 4. Select your project, branch, and Postgres database.
+-- MAGIC
+-- MAGIC 5. Click **Create**
+-- MAGIC
+-- MAGIC After this you will be able to go to the Catalog Explorer and find your catalog, you can explore schemas, tables and views.
+-- MAGIC
+-- MAGIC After registration, query your Lakebase database using SQL warehouses or any tool that connects to Unity Catalog.
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #ff9800;
+-- MAGIC   background: #fff3e0;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#e65100; margin-bottom:6px;">
+-- MAGIC     IMPORTANT - Limitations with Unity Catalog registration:
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC       <ul>
+-- MAGIC         <li>
+-- MAGIC           <strong>Read-only access:</strong> Catalogs registered from Lakebase databases are read-only through Unity Catalog.
+-- MAGIC         </li>
+-- MAGIC         <li>
+-- MAGIC           <strong>Single database per catalog:</strong> Each Unity Catalog catalog represents one Lakebase database. 
+-- MAGIC         </li>
+-- MAGIC         <li>
+-- MAGIC           <strong>Metadata sync:</strong> Unity Catalog caches metadata to reduce Postgres requests. New objects may not appear immediately. Trigger a full refresh to make sure you see all new objects.
+-- MAGIC         </li>
+-- MAGIC       </ul>
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## D. Explore PostgreSQL System Metadata
+-- MAGIC
+-- MAGIC In this section, you'll explore the **metadata** stored within your **Lakebase PostgreSQL** database to better understand how it mirrors a standard PostgreSQL environment and not a Databricks environment.  
+-- MAGIC
+-- MAGIC By querying system schemas such as **pg_catalog** and **information_schema**, you can inspect tables, columns, and other database objects, just like in a traditional PostgreSQL system.
+-- MAGIC
+-- MAGIC This quick exploration helps demonstrate that **Lakebase behaves just like PostgreSQL**, giving you confidence in how your database is structured and managed within Databricks.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D1. Open the Lakebase SQL Editor 
+-- MAGIC
+-- MAGIC 1. Go back to **Lakebase Postgres** using the apps switcher and then click **SQL Editor**
+-- MAGIC
+-- MAGIC 2. Confirm the default database is set to **databricks_postgres**.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D2. Explore Available Schemas
+-- MAGIC
+-- MAGIC 1. Copy the code below and run it in the SQL Editor to list the available schemas in the **databricks_postgres** database.
+-- MAGIC
+-- MAGIC 2. Confirm that the following PostgreSQL schemas are displayed:
+-- MAGIC    - **__db_system** - Databricks system metadata  
+-- MAGIC    - **information_schema** - SQL standard metadata views  
+-- MAGIC    - **pg_catalog** - PostgreSQL system catalog  
+-- MAGIC    - **pg_toast** - System schema in PostgreSQL that contains TOAST tables, which are internal, hidden tables.
+-- MAGIC    - **public** - Default user schema
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC SELECT schema_name
+-- MAGIC FROM information_schema.schemata
+-- MAGIC ORDER BY schema_name;
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D3. Query the PostgreSQL System Catalog `pg_catalog`
+-- MAGIC
+-- MAGIC 1. Copy the code below and run it in the SQL Editor to view tables in the **pg_catalog** schema within your **databricks_postgres** database.
+-- MAGIC
+-- MAGIC **NOTE:** The **pg_catalog** schema contains PostgreSQL internal system tables and views. These provide metadata about database objects, users, and configuration.
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC SELECT *
+-- MAGIC FROM pg_tables
+-- MAGIC WHERE schemaname = 'pg_catalog'
+-- MAGIC ORDER BY tablename;
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### D4. Query `information_schema` Schema
+-- MAGIC 1. Copy the code below and run it in the SQL Editor to view the **information_schema** schema within your **databricks_postgres** database.
+-- MAGIC
+-- MAGIC     **NOTE:** The **information_schema** provides standardized views of database metadata, making it easier to write portable queries across different database systems. 
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <button onclick="copyBlock()">Copy to clipboard</button>
+-- MAGIC
+-- MAGIC <pre id="copy-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; padding:14px 16px; font-size:0.85rem; line-height:1.35; white-space:pre;">
+-- MAGIC <code>
+-- MAGIC <!-------------------ADD SOLUTION CODE BELOW------------------->
+-- MAGIC SELECT *
+-- MAGIC FROM information_schema.tables
+-- MAGIC WHERE table_schema = 'information_schema'
+-- MAGIC ORDER BY table_name;
+-- MAGIC <!-------------------END SOLUTION CODE------------------->
+-- MAGIC </code></pre>
+-- MAGIC
+-- MAGIC <script>
+-- MAGIC function copyBlock() {
+-- MAGIC   const el = document.getElementById("copy-block");
+-- MAGIC   if (!el) return;
+-- MAGIC
+-- MAGIC   const text = el.innerText;
+-- MAGIC
+-- MAGIC   // Preferred modern API
+-- MAGIC   if (navigator.clipboard && navigator.clipboard.writeText) {
+-- MAGIC     navigator.clipboard.writeText(text)
+-- MAGIC       .then(() => alert("Copied to clipboard"))
+-- MAGIC       .catch(err => {
+-- MAGIC         console.error("Clipboard write failed:", err);
+-- MAGIC         fallbackCopy(text);
+-- MAGIC       });
+-- MAGIC   } else {
+-- MAGIC     fallbackCopy(text);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC
+-- MAGIC function fallbackCopy(text) {
+-- MAGIC   const textarea = document.createElement("textarea");
+-- MAGIC   textarea.value = text;
+-- MAGIC   textarea.style.position = "fixed";
+-- MAGIC   textarea.style.left = "-9999px";
+-- MAGIC   document.body.appendChild(textarea);
+-- MAGIC   textarea.select();
+-- MAGIC   try {
+-- MAGIC     document.execCommand("copy");
+-- MAGIC     alert("Copied to clipboard");
+-- MAGIC   } catch (err) {
+-- MAGIC     console.error("Fallback copy failed:", err);
+-- MAGIC     alert("Could not copy to clipboard. Please copy manually.");
+-- MAGIC   } finally {
+-- MAGIC     document.body.removeChild(textarea);
+-- MAGIC   }
+-- MAGIC }
+-- MAGIC </script>
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## E. PLEASE READ: Next Steps
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### E1. Continue Your Learning
+-- MAGIC
+-- MAGIC With your **Lakebase database instance** created, continue to next notebook.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### E2. ⚠️ WARNING: Cleanup Instructions (if you don't have time to complete the other related notebooks)
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #ff9800;
+-- MAGIC   background: #fff3e0;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#e65100; margin-bottom:6px;">
+-- MAGIC     Warning - PLEASE READ IF RUNNING IN YOUR OWN WORKSPACE
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC     PLEASE COMPLETE THE FOLLOWING TO DELETE YOUR DATABASE INSTANCE AND LAB SCHEMA 
+-- MAGIC   </div>
+-- MAGIC </div>
+-- MAGIC
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC **IMPORTANT:** If you have finished working with your database instance or cannot continue to the remaining notebooks, please clean up your resources to avoid hitting workspace limits and unnecessary costs.  
+-- MAGIC
+-- MAGIC - Each workspace supports a maximum of **1000 database projects**.  
+-- MAGIC - Cleaning up ensures resources are freed and prevents blocking other users in shared environments.
+-- MAGIC
+-- MAGIC #### Delete Your Lakebase Autoscaling Project
+-- MAGIC 1. Navigate to **Settings** → **Delete Project**.  
+-- MAGIC 2. Follow the instructions.  
+-- MAGIC 3. Click **Delete** and confirm.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## F. Summary and Key Takeaways
+-- MAGIC
+-- MAGIC In this comprehensive lab, you successfully learned the fundamentals of **Databricks Lakebase Autoscaling** by creating and configuring a production-ready database project. You gained hands-on experience with **native PostgreSQL operations**, including table creation with advanced constraints, data population, and system metadata exploration through **pg_catalog** and **information_schema**.
+-- MAGIC
+-- MAGIC **Key accomplishments:**
+-- MAGIC - **Provisioned** a Lakebase PostgreSQL instance with proper configuration settings
+-- MAGIC - **Created and populated** PostgreSQL tables using native PL/pgSQL with advanced features like SERIAL keys and CHECK constraints
+-- MAGIC - **Explored system metadata** to understand PostgreSQL compatibility and structure

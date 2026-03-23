@@ -1,0 +1,53 @@
+-- Databricks notebook source
+-- MAGIC %run ./Classroom-Setup-Common
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC ## Create user's catalog
+-- MAGIC my_catalog = build_user_catalog(catalog_forced = None)
+-- MAGIC
+-- MAGIC r = spark.sql(f'DECLARE OR REPLACE VARIABLE my_catalog STRING')
+-- MAGIC r = spark.sql(f'SET VAR my_catalog = "{my_catalog}"')
+-- MAGIC r = spark.sql(f'USE CATALOG IDENTIFIER(my_catalog)')
+-- MAGIC
+-- MAGIC ## Create the schema if it does not exist, then switch to it
+-- MAGIC schema_name = 'lakebase_sync'
+-- MAGIC r = spark.sql(f'CREATE SCHEMA IF NOT EXISTS {schema_name}')
+-- MAGIC r = spark.sql(f'USE SCHEMA {schema_name}')
+-- MAGIC
+-- MAGIC ## Create the trips table in your schema for the lab
+-- MAGIC print(f'Creating table {my_catalog}.{schema_name}.trips_delta_silver')
+-- MAGIC r = spark.sql(f'DROP TABLE IF EXISTS trips_delta_silver')
+-- MAGIC r = spark.sql('''
+-- MAGIC     CREATE TABLE trips_delta_silver AS
+-- MAGIC     SELECT
+-- MAGIC       sha1(CONCAT(
+-- MAGIC           CAST(tpep_pickup_datetime AS STRING),
+-- MAGIC           CAST(tpep_dropoff_datetime AS STRING),
+-- MAGIC           CAST(trip_distance AS STRING)
+-- MAGIC       )) AS trip_id,
+-- MAGIC       *
+-- MAGIC     FROM samples.nyctaxi.trips;
+-- MAGIC     ''')
+-- MAGIC
+-- MAGIC ## Add primary key
+-- MAGIC r = spark.sql(f'''
+-- MAGIC     ALTER TABLE trips_delta_silver 
+-- MAGIC       ALTER COLUMN trip_id SET NOT NULL;            
+-- MAGIC     ''')
+-- MAGIC r = spark.sql(f'''
+-- MAGIC     ALTER TABLE trips_delta_silver
+-- MAGIC       ADD CONSTRAINT pk_trips PRIMARY KEY (trip_id);        
+-- MAGIC     ''')
+-- MAGIC ## Confirm your default catalog and schema
+-- MAGIC spark.sql("SELECT current_catalog() AS `Default Catalog`, current_schema() AS `Default Schema`").display()
+-- MAGIC
+-- MAGIC
+-- MAGIC display_config_values(
+-- MAGIC   [
+-- MAGIC     ('Lab Catalog', my_catalog),
+-- MAGIC     ('Lab Schema', schema_name),
+-- MAGIC     ('Lab Delta Table', 'trips_delta_silver')
+-- MAGIC   ]
+-- MAGIC )
