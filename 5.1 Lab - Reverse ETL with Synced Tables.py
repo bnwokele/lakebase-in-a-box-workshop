@@ -81,8 +81,8 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Unity Catalog configuration
-UC_CATALOG = "<add your catalog>"
-UC_SCHEMA = "add your schema"
+UC_CATALOG = "add-your-catalog"
+UC_SCHEMA = "add-your-schema"
 UC_TABLE = f"{UC_CATALOG}.{UC_SCHEMA}.promotions"
 
 # Lakebase configuration
@@ -495,15 +495,33 @@ with conn_prod.cursor() as cur:
 # COMMAND ----------
 
 from pyspark.sql.functions import when, lit
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DecimalType, BooleanType, TimestampType
+from datetime import datetime, timedelta
+from decimal import Decimal
+
+now = datetime.now()
+end_date = now + timedelta(days=14) # 2-week sale
 
 # Add new flash sale promotions
 new_promos = [
-    Row(id=13, product_id=3,  badge_text="FLASH SALE",    discount_pct=45.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=14, product_id=7,  badge_text="FLASH SALE",    discount_pct=35.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=15, product_id=35, badge_text="MEGA DEAL",     discount_pct=60.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=13, product_id=3, badge_text="FLASH SALE", discount_pct=Decimal("45.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=14, product_id=7, badge_text="FLASH SALE", discount_pct=Decimal("35.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=15, product_id=35, badge_text="MEGA DEAL", discount_pct=Decimal("60.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
 ]
 
-new_df = spark.createDataFrame(new_promos)
+schema = StructType([
+    StructField("id", IntegerType()),
+    StructField("product_id", IntegerType()),
+    StructField("badge_text", StringType()),
+    StructField("discount_pct", DecimalType(5, 2)),
+    StructField("sale_price", DecimalType(10, 2)),
+    StructField("promo_type", StringType()),
+    StructField("is_active", BooleanType()),
+    StructField("start_date", TimestampType()),
+    StructField("end_date", TimestampType()),
+])
+
+new_df = spark.createDataFrame(new_promos, schema=schema)
 
 # Compute sale prices for new promos
 new_with_prices = (
@@ -518,7 +536,7 @@ new_with_prices = (
 # Append new promos to the existing table
 new_with_prices.write.mode("append").saveAsTable(UC_TABLE)
 
-# Also update an existing promo — increase Product 1 discount from 20% to 35%
+# Also update an existing promo - increase Product 1 discount from 20% to 35%
 spark.sql(f"""
     UPDATE {UC_TABLE}
     SET discount_pct = 35.00,
@@ -527,9 +545,9 @@ spark.sql(f"""
     WHERE id = 1
 """)
 
-print("✅ Marketing team updated promotions:")
-print("   • Added 3 new flash sale products")
-print("   • Increased Product 1 discount from 20% to 35%")
+print("\u2705 Marketing team updated promotions:")
+print("   \u2022 Added 3 new flash sale products")
+print("   \u2022 Increased Product 1 discount from 20% to 35%")
 display(spark.table(UC_TABLE).orderBy("discount_pct", ascending=False))
 
 # COMMAND ----------
@@ -542,9 +560,13 @@ display(spark.table(UC_TABLE).orderBy("discount_pct", ascending=False))
 
 # COMMAND ----------
 
+SYNCED_TABLE = f"{UC_CATALOG}.{UC_SCHEMA}.promotions_synced_prod"
+
+# COMMAND ----------
+
 # Trigger the sync pipeline to pick up the changes
 try:
-    table_info = w.database.get_synced_database_table(name=UC_TABLE)
+    table_info = w.database.get_synced_database_table(name=SYNCED_TABLE)
     pipeline_id = table_info.data_synchronization_status.pipeline_id
     print(f"🔄 Triggering sync pipeline: {pipeline_id}")
     w.pipelines.start_update(pipeline_id=pipeline_id)
@@ -576,7 +598,7 @@ conn_prod, _, _ = connect_to_branch("production")
 with conn_prod.cursor() as cur:
     cur.execute(f"""
         SELECT id, product_id, badge_text, discount_pct, sale_price, is_active
-        FROM {db_schema}.promotions
+        FROM {db_schema}.promotions_synced_prod
         WHERE is_active = true
         ORDER BY discount_pct DESC
     """)
