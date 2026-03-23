@@ -10,32 +10,22 @@ You will step into the role of a developer at DataCart, a rapidly growing e-comm
 
 | # | Notebook | Type | Description |
 |---|----------|------|-------------|
-| 0 | `0 Workshop Introduction.py` | Lecture | Workshop overview, Lakebase architecture, and the DataCart scenario |
-| 1 | `1 Lecture - Creating and Exploring a Lakebase Autoscaling Project.sql` | Lecture | Create a project, explore settings, connect to your database, create tables, and query PostgreSQL system metadata |
-| 1.1 | `1.1 Lab Setup Project.py` | Lab | Automated project creation, OAuth connection, and e-commerce schema seeding (customers, products, orders) |
-| 2 | `2 Lecture - Roles and Permissions.sql` | Lecture | Workspace vs. database permission layers, OAuth roles, native Postgres roles, and GRANT/REVOKE workflows |
-| 3 | `3 Lecture - Database Branching.ipynb` | Lecture | Branching concepts, copy-on-write storage, branch strategies, Schema Diff, and branch lifecycle management |
-| 3.1 | `3.1 Lab Create Branch - Data Only.py` | Lab | Create a dev branch from production, query and modify data in isolation, verify production is untouched |
-| 3.2 | `3.2 Lab - Parallel Development.ipynb` | Lab | Three developers work in parallel on isolated branches (loyalty features, multi-currency support, performance indexes) |
-| 3.3 | `3.3 Lab - Schema To Prod Migration.py` | Lab | Promote validated schema changes from a feature branch to production by replaying DDL |
-| 3.4 | `3.4 Lab - Branch Reset.py` | Lab | Detect production drift, reset a branch to match parent state, and re-test migrations |
-| 4 | `4 Lecture - Point in Time Restore & Snapshots.ipynb` | Lecture | PITR restore windows, snapshot scheduling, and when to use each |
-| 4.1 | `4.1 Lab - Point in Time Recovery (Disaster Management).ipynb` | Lab | Simulate an accidental `DROP TABLE` and recover using Point-in-Time Recovery |
+| 0 | `0 Workshop Introduction` | Lecture | Workshop overview, Lakebase architecture, and the DataCart scenario |
+| 1 | `1 Lecture - Creating and Exploring a Lakebase Autoscaling Project` | Lecture | Create a project, explore settings, connect to your database, create tables, and query PostgreSQL system metadata |
+| 1.1 | `1.1 Lab Setup Project` | Lab | Automated project creation, OAuth connection, and e-commerce schema seeding (customers, products, orders) |
+| 2 | `2 Lecture - Roles and Permissions` | Lecture | Workspace vs. database permission layers, OAuth roles, native Postgres roles, and GRANT/REVOKE workflows |
+| 2.1 | `2.1 Lab Connect Storefront to Lakebase` | Lab | Handle permissions of app service principal to connect it to Lakebase |
+| 3 | `3 Lecture - Database Branching` | Lecture | Branching concepts, copy-on-write storage, branch strategies, Schema Diff, and branch lifecycle management |
+| 3.1 | `3.1 Lab - Parallel Development` | Lab | Three developers work in parallel on isolated branches (loyalty features, multi-currency support, performance indexes) |
+| 3.2 | `3.2 Lab - Schema To Prod Migration` | Lab | Promote validated schema changes from a feature branch to production by replaying DDL |
+| 3.3 | `3.3 Lab - Branch Reset` | Lab | Detect production drift, reset a branch to match parent state, and re-test migrations |
+| 4 | `4 Lecture - Point in Time Restore & Snapshots` | Lecture | PITR restore windows, snapshot scheduling, and when to use each |
+| 4.1 | `4.1 Lab - Point in Time Recovery (Disaster Management)` | Lab | Simulate an accidental `DROP TABLE` and recover using Point-in-Time Recovery |
+| 5 | `5 Lecture - Reverse ETL` | Lecture | Introduces Reverse ETL and how Lakebase makes it easy to do |
+| 5.1 | `5.1 Lab - Reverse ETL with Synced Table` | Lab | Creates promotions Delta table in Unity Catalog, syncs to Lakebase via reverse ETL |
+| 6 | `6 Lecture - Monitoring` | Lecture | How to monitor your Lakebase instance / How to interpret graphs provided in the Lakebase monitoring page |
+| 7 | `7 Lecture - Connects Apps to Lakebase` | Lecture | How to connect external apps to lakebase |
 
-### Workshop Notebooks
-
-| Notebook | Topic | What Happens |
-|----------|-------|-------------|
-| **0 Workshop Introduction** | Overview | DataCart scenario, Lakebase architecture, learning objectives |
-| **1.1 Lab Setup Project** | Setup | Creates a Lakebase project and seeds 5 tables (customers, products, inventory, orders, order_items) |
-| **1.2 Lab Connect Storefront** | App Setup | Grants the storefront app's service principal access to the database |
-| **3 Lecture - Database Branching** | Lecture | Branching concepts and architecture |
-| **3.1 Lab Create Branch** | Branching | Creates a dev branch, demonstrates data isolation |
-| **3.2 Lab Parallel Development** | Branching | Three developers work in parallel on isolated branches (loyalty, currency, indexes) |
-| **3.3 Lab Schema to Prod Migration** | Migration | Promotes loyalty features and reviews from branch to production |
-| **3.4 Lab Branch Reset** | Branching | Handles schema drift, resets branch to parent, promotes priority + email_verified |
-| **4.1 Lab Point in Time Recovery** | PITR | Simulates `DROP TABLE orders CASCADE` disaster, recovers via PITR branch |
-| **5.1 Lab Reverse ETL** | Synced Tables | Creates promotions Delta table in Unity Catalog, syncs to Lakebase via reverse ETL |
 
 ### DataCart Storefront App
 
@@ -55,7 +45,6 @@ A customer-facing e-commerce web application (React + FastAPI) that **evolves in
 ### Prerequisites
 
 - Databricks workspace with Lakebase support
-- Databricks CLI v0.229.0+ with an authenticated profile
 
 ### Setup Steps
 
