@@ -1,22 +1,34 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Scenario 2: Parallel Development with Branching
+# MAGIC # Scenario 1: Parallel Development with Branching
 # MAGIC
 # MAGIC ---
 # MAGIC
 # MAGIC **The Challenge:**  
-# MAGIC DataCart has three developers that need to make **breaking schema changes simultaneously** in preparation for the Spring Sale. In a traditional single-database setup, their migrations could conflict and block each other. Furthermore, the team could perform these schema changes and testing on a smaller dataset that is not representative of production data. 
-# MAGIC
-# MAGIC **The Lakebase Solution: Branching**  
-# MAGIC Each developer creates an isolated **branch** — a zero-copy snapshot of production. They work independently, test their changes, and then merge back when ready. The production branch is never touched during development.
+# MAGIC DataCart has three developers that need to make **schema changes simultaneously** to support the new features for the Spring Sale. 
 # MAGIC
 # MAGIC | Developer | Team | Task |
 # MAGIC |-----------|------|------|
-# MAGIC | Developer A | Loyalty Team | Add `loyalty_points` column + new `loyalty_members` table |
+# MAGIC | Developer A | Loyalty Team | Add `loyalty_points` column, new `loyalty_members` table and `review` table|
 # MAGIC | Developer B | Global Team | Add `exchange_rates` table + convert `currency` to a FK |
 # MAGIC | Developer C | Performance Team | Add indexes to `products` for Spring Sale traffic surge |
 # MAGIC
-# MAGIC > 💡 **Key Insight:** With Lakebase branches, Developer A's DDL changes cannot break Developer B's code, because they work in **completely isolated copies** of the database.
+# MAGIC Traditional database workflows often create bottlenecks that slow down development and introduce avoidable risks. Here are some ways using traditional databases holds teams back during development -
+# MAGIC - Schema changes can create friction during development (Developer A's DDL changes (full_name -> name) can break Developer B's code (dependent on full_name), because they are working on the **same copy** of the database
+# MAGIC - Creating isolated environments can be expensive. Spinning up a replica of production — same data, same volume, same indexes — means paying for a second full-size instance, waiting >15 minutes for a snapshot restore, **and doing it again every time prod moves forward**. It just isn’t feasible!
+# MAGIC - Testing against small, synthetic datasets often fails to catch edge cases that only exist in real-world data **leading to high-severity incidents in production**
+# MAGIC
+# MAGIC **The Lakebase Solution: Branching**  
+# MAGIC Each developer creates an isolated **branch** — a zero-copy snapshot of production. They work independently, test their changes, and then perform migrations on the production branch after it has been validated on production like / scale data. The production branch is never touched during development.
+# MAGIC
+# MAGIC What Lakebase Offers -
+# MAGIC - Quick branch creation (in seconds)
+# MAGIC - Ephemeral branches that can expire after use (cutting compute cost)
+# MAGIC - Ability to reset branch to parent state to keep prod and non-prod (dev, staging) branches in sync
+# MAGIC - No data duplication (copy on write)
+# MAGIC
+# MAGIC
+# MAGIC **[Technical Blog](https://community.databricks.com/t5/technical-blog/lakebase-branching-meets-docker-the-migration-safety-net-i-wish/ba-p/149945) to learn more about the great benefits of Lakebase Branching from an ex-backend engineer**
 
 # COMMAND ----------
 

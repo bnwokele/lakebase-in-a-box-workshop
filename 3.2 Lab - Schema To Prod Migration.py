@@ -1,15 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Scenario 3: Schema Changes — Feature Branch to Production
+# MAGIC # Scenario 2: Schema Changes — Feature Branch to Production
 # MAGIC
-# MAGIC In the last demo, we created a feature branch `dev-loyalty-reviews`, added  the `loyalty_points` column to the `customers` table and created a new `loyalty_members` table to support DataCart's Spring Sale loyalty program. Now we will show how to promote these changes to the production branch.
+# MAGIC In the last demo, we created a feature branch `dev-loyalty-reviews`, added  the `loyalty_points` column to the `customers` table, created a new `loyalty_members` table to support DataCart's Spring Sale loyalty program, and added a `reviews` table to support product reviews in the UI. Now we will show how to promote these changes to the production branch.
 # MAGIC
-# MAGIC ## What You'll Learn
-# MAGIC - How to promote validated schema changes to `production` by replaying DDL
+# MAGIC ## How to promote validated schema changes to `production`
+# MAGIC - Create DDL / .sql script with changes and use it to promote changes from dev to prod (integrate with Github actions or other versioning tool)
+# MAGIC - Take Snapshot of dev with all changes and restore making it the new production branch
+# MAGIC - and more
 # MAGIC
 # MAGIC ## How It Works
 # MAGIC ```
-# MAGIC production ─────────────────── replay migration ────── production (with loyalty_points)
+# MAGIC production ─────────────────── replay migration ────── production (with loyalty_points, loyalty_memebers, and reviews)
 # MAGIC        \                           ↑
 # MAGIC         └── feature/dev-loyalty-reviews   │
 # MAGIC              1. ALTER TABLE        │
@@ -17,6 +19,8 @@
 # MAGIC              3. Validate ──────────┘
 # MAGIC              4. 🗑️ delete branch
 # MAGIC ```
+# MAGIC
+# MAGIC **[Technical Blog](https://community.databricks.com/t5/technical-blog/lakebase-branching-meets-docker-the-migration-safety-net-i-wish/ba-p/149945) to learn more about the great benefits of Lakebase Branching from an ex-backend engineer**
 
 # COMMAND ----------
 
@@ -249,10 +253,6 @@ print("=" * 60)
 # MAGIC 3. Click the **Schema diff** button to see the differences vs production
 # MAGIC
 # MAGIC > 📖 **Docs**: [Compare branch schemas](https://docs.databricks.com/aws/en/oltp/projects/manage-branches#compare-branch-schemas)
-# MAGIC
-# MAGIC Here's an example of what the Schema Diff looks like:
-# MAGIC
-# MAGIC ![Schema Comparison](/Workspace/Users//lakebase_branching/Compare_Schema.png)
 
 # COMMAND ----------
 

@@ -37,9 +37,9 @@
 # MAGIC | Concept | Explanation |
 # MAGIC |---------|-------------|
 # MAGIC | **Compute (Endpoints)** | Each branch has one or more *endpoints* — PostgreSQL-compatible connection targets that process queries. Endpoints can scale up, scale down, or reach zero when idle, without touching your data. |
-# MAGIC | **Storage (Branches)** | All branch data lives in object storage. Because storage is separate from compute, creating a branch is **zero-copy** — no data is physically duplicated. A branch only consumes extra storage as changes diverge from its source. |
-# MAGIC | **Scale-to-Zero** | When no connections are active, the compute layer scales to zero, eliminating cost. The data remains safely in storage and the endpoint resumes instantly on the next connection. |
-# MAGIC | **Independent Scaling** | You can attach multiple endpoints to a single branch (e.g. one read-write, one read-only for analytics). Each scales according to its own workload. |
+# MAGIC | **Storage (Branches)** | All branch data lives in object storage. Because storage is separate from compute and Lakebase uses copy-on-write technology, creating a branch is **zero-copy** — no data is physically duplicated. A branch only consumes extra storage as changes diverge from its source. |
+# MAGIC | **Scale-to-Zero** | When there is no traffic or activity, the compute layer scales to zero, eliminating cost. The data remains safely in storage and the endpoint resumes instantly on the next connection. |
+# MAGIC | **Independent Scaling** | You can attach multiple endpoints to a single branch (e.g. one read-write, one read-only for additional reaad operations). |
 
 # COMMAND ----------
 
@@ -50,7 +50,9 @@
 # MAGIC
 # MAGIC ### The Challenge
 # MAGIC
-# MAGIC DataCart's engineering team needs to modernize their database schema to support international customers and a new loyalty program ahead of the Spring Sale. Lets take a look at how lakebase improves developer productivity to help the team meet their deadline.
+# MAGIC DataCart's engineering team needs to modernize their database schema and website to support the release of multiple new features (product reviews, a new loyalty program, etc) ahead of the Spring Sale. Lets take a look at how lakebase improves developer productivity while still maintaining high performance of Postgres.
+# MAGIC
+# MAGIC #### Parallel Development
 # MAGIC
 # MAGIC To support the launch **three developers** need to work in parallel without blocking each other or risking production stability:
 # MAGIC

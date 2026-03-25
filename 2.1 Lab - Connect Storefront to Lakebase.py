@@ -22,7 +22,7 @@
 # MAGIC the app. However, the SP needs two things before it can query Lakebase:
 # MAGIC
 # MAGIC 1. **A Postgres role** — Created automatically when you add the Lakebase project as an
-# MAGIC    app resource (done in the Workshop Setup guide, Step 4)
+# MAGIC    app resource
 # MAGIC 2. **Schema-level grants** — The SP's Postgres role exists but has no permissions on
 # MAGIC    the `ecommerce` schema. We need to explicitly grant access.
 # MAGIC
@@ -72,7 +72,7 @@ dbutils.library.restartPython()
 # MAGIC ## Step 1: Identify the Service Principal
 # MAGIC
 # MAGIC Every Databricks App has a service principal (SP) that acts as its identity.
-# MAGIC The SP is created automatically when you create the app. Let's find it.
+# MAGIC The SP is created automatically when you create the app. Let's find it. **Make sure to change the APP_NAME variable to the name of the app you have deployed.**
 
 # COMMAND ----------
 
@@ -87,7 +87,7 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Look up the app to find its service principal
-APP_NAME = "datacart-storefront"
+APP_NAME = "<ADD_YOUR_APP_NAME>"
 
 app_info = w.apps.get(APP_NAME)
 SP_CLIENT_ID = app_info.service_principal_client_id
@@ -113,7 +113,7 @@ print(f"   Schema:        ecommerce")
 # MAGIC
 # MAGIC | Layer | What | How |
 # MAGIC |-------|------|-----|
-# MAGIC | **Lakebase project** | `CAN_MANAGE` permission on the project | Added via the app resource (Workshop Setup Step 4) |
+# MAGIC | **Lakebase project** | `CAN_MANAGE` permission on the project | Added via the app resource |
 # MAGIC | **Postgres role** | Auto-created when the app resource is added | Lakebase OAuth system links the SP identity to a Postgres role |
 # MAGIC | **Schema grants** | `USAGE`, `ALL` on tables/sequences in `ecommerce` | Granted by the project owner (you) — **this is what we do now** |
 # MAGIC
@@ -217,7 +217,7 @@ else:
 # MAGIC | `ALTER DEFAULT PRIVILEGES` | Ensures future tables (reviews, loyalty_members, promotions) are automatically accessible |
 # MAGIC
 # MAGIC > The `ALTER DEFAULT PRIVILEGES` grants are important — as the workshop progresses
-# MAGIC > and new tables are created (reviews in Lab 3.3, promotions in Lab 5.1), the SP
+# MAGIC > and new tables are created (reviews in Lab 3.2, promotions in Lab 5.1), the SP
 # MAGIC > will automatically have access without needing to re-run this notebook.
 
 # COMMAND ----------
