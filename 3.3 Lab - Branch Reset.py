@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Scenario 4: Resetting a Branch to Parent State
+# MAGIC # Scenario 3: Resetting a Branch to Parent State
 # MAGIC
 # MAGIC **The Challenge:**  
 # MAGIC You're developing a feature on a branch, but meanwhile another team pushes
