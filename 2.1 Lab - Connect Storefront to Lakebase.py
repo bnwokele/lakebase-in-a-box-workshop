@@ -87,7 +87,7 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Look up the app to find its service principal
-APP_NAME = "<ADD_YOUR_APP_NAME>"
+APP_NAME = "<ADD APP NAME HERE>"
 
 app_info = w.apps.get(APP_NAME)
 SP_CLIENT_ID = app_info.service_principal_client_id

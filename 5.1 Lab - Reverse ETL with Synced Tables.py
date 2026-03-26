@@ -81,8 +81,8 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Unity Catalog configuration
-UC_CATALOG = "add-your-catalog"
-UC_SCHEMA = "add-your-schema"
+UC_CATALOG = "<add-your-catalog-name-here>"
+UC_SCHEMA = "<add-your-schema-name-here>"
 UC_TABLE = f"{UC_CATALOG}.{UC_SCHEMA}.promotions"
 
 # Lakebase configuration
@@ -138,36 +138,50 @@ print(f"   Change Data Feed enabled (required for Triggered/Continuous sync mode
 # COMMAND ----------
 
 from pyspark.sql import Row
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DecimalType, BooleanType, TimestampType
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 now = datetime.now()
 end_date = now + timedelta(days=14)  # 2-week sale
 
 promotions = [
     # Electronics deals
-    Row(id=1,  product_id=1,  badge_text="SPRING SALE",   discount_pct=20.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=2,  product_id=2,  badge_text="HOT DEAL",      discount_pct=30.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=3,  product_id=6,  badge_text="SPRING SALE",   discount_pct=15.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=1,  product_id=1,  badge_text="SPRING SALE",   discount_pct=Decimal("20.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=2,  product_id=2,  badge_text="HOT DEAL",      discount_pct=Decimal("30.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=3,  product_id=6,  badge_text="SPRING SALE",   discount_pct=Decimal("15.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
     # Clothing deals
-    Row(id=4,  product_id=11, badge_text="CLEARANCE",     discount_pct=40.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=5,  product_id=14, badge_text="SPRING SALE",   discount_pct=25.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=4,  product_id=11, badge_text="CLEARANCE",     discount_pct=Decimal("40.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=5,  product_id=14, badge_text="SPRING SALE",   discount_pct=Decimal("25.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
     # Books deals
-    Row(id=6,  product_id=21, badge_text="LIMITED TIME",  discount_pct=10.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=7,  product_id=23, badge_text="SPRING SALE",   discount_pct=20.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=6,  product_id=21, badge_text="LIMITED TIME",  discount_pct=Decimal("10.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=7,  product_id=23, badge_text="SPRING SALE",   discount_pct=Decimal("20.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
     # Home deals
-    Row(id=8,  product_id=31, badge_text="FLASH SALE",    discount_pct=35.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=9,  product_id=33, badge_text="SPRING SALE",   discount_pct=15.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=8,  product_id=31, badge_text="FLASH SALE",    discount_pct=Decimal("35.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=9,  product_id=33, badge_text="SPRING SALE",   discount_pct=Decimal("15.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
     # Sports deals
-    Row(id=10, product_id=41, badge_text="HOT DEAL",      discount_pct=25.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=11, product_id=45, badge_text="SPRING SALE",   discount_pct=20.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
-    Row(id=12, product_id=50, badge_text="CLEARANCE",     discount_pct=50.00, sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=10, product_id=41, badge_text="HOT DEAL",      discount_pct=Decimal("25.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=11, product_id=45, badge_text="SPRING SALE",   discount_pct=Decimal("20.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
+    Row(id=12, product_id=50, badge_text="CLEARANCE",     discount_pct=Decimal("50.00"), sale_price=None, promo_type="percentage", is_active=True, start_date=now, end_date=end_date),
 ]
 
-df = spark.createDataFrame(promotions)
+schema = StructType([
+    StructField("id", IntegerType(), False),
+    StructField("product_id", IntegerType(), False),
+    StructField("badge_text", StringType(), True),
+    StructField("discount_pct", DecimalType(5, 2), True),
+    StructField("sale_price", DecimalType(10, 2), True),
+    StructField("promo_type", StringType(), True),
+    StructField("is_active", BooleanType(), True),
+    StructField("start_date", TimestampType(), True),
+    StructField("end_date", TimestampType(), True),
+])
+
+df = spark.createDataFrame(promotions, schema=schema)
 
 # Compute sale_price from product prices in Lakebase
 # For now, write without sale_price — we'll compute it after sync or in a separate step
-df.write.mode("overwrite").saveAsTable(UC_TABLE)
+df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(UC_TABLE)
 
 print(f"✅ Seeded {len(promotions)} Spring Sale promotions")
 display(spark.table(UC_TABLE))
