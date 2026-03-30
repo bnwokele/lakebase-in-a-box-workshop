@@ -146,16 +146,53 @@ code. This ensures the connection environment variables (`PGHOST`, `PGUSER`, `PG
 
 Now deploy with the source code. Choose one of the options below.
 
-#### Deploy via the Databricks UI
+#### Option A: Deploy via the Databricks UI
 
 1. Go to **Compute > Apps > datacart-storefront**
 2. Click the **Deploy** button
 3. Set the **Source code path** to: `/Workspace/Users/<your-email>/datacart-storefront`
 4. Click **Deploy**
 
-### Step 5: Go through the rest of the Workshop!
+#### Option B: Deploy via Databricks Asset Bundles (DABs)
 
-Initially you will see that the service principal doesn't have access to the tables in lakebase so you will see an error. Run notebook **`2.1 Lab - Connect Storefront to Lakebase`** to connect the two. Once this has been done, you will see the store populate in the UI. Now you can go through the rest of the workshop!
+The datacart-storefront folder includes a `databricks.yml` bundle configuration for automated deployment.
+
+**Before deploying**, update the target environments in `databricks.yml` to match your workspace:
+
+```yaml
+# databricks.yml — update the profile in each target to your Databricks CLI profile
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      profile: <your-profile>    # ← Change this to your CLI profile
+
+  workshop:
+    mode: production
+    workspace:
+      profile: <your-profile>    # ← Change this to your CLI profile
+```
+
+> **How to find your profile** (If deploying from terminal): Run `databricks auth profiles` to list available profiles.
+> If you haven't set one up, run `databricks auth login --host <workspace-url> --profile <profile-name>` first.
+
+Then deploy:
+
+```bash
+cd datacart-storefront
+
+# Validate the bundle
+databricks bundle validate
+
+# From the bundle root, use a Databricks CLI deploy command
+databricks bundle deploy --target dev
+```
+
+#### Step 5: Go through the rest of the Workshop!
+
+Initially you will see that the service principal doesn't have access to the tables in lakebase so you will see an error. Run **`notebook 2.1 Lab - Connect Storefront to Lakebase`** to connect the two. Once this has been done, you will see the store populate in the UI. Now you can go through the rest of the workshop!
+
 
 ## Workshop Flow — Storefront Evolution
 
