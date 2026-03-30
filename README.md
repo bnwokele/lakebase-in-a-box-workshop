@@ -146,99 +146,16 @@ code. This ensures the connection environment variables (`PGHOST`, `PGUSER`, `PG
 
 Now deploy with the source code. Choose one of the options below.
 
-#### Option A: Deploy via the Databricks UI
+#### Deploy via the Databricks UI
 
 1. Go to **Compute > Apps > datacart-storefront**
 2. Click the **Deploy** button
 3. Set the **Source code path** to: `/Workspace/Users/<your-email>/datacart-storefront`
 4. Click **Deploy**
 
-#### Option B: Deploy via Databricks Asset Bundles (DABs)
+### Step 5: Go through the rest of the Workshop!
 
-The datacart-storefront folder includes a `databricks.yml` bundle configuration for automated deployment.
-
-**Before deploying**, update the target environments in `databricks.yml` to match your workspace:
-
-```yaml
-# databricks.yml — update the profile in each target to your Databricks CLI profile
-targets:
-  dev:
-    default: true
-    mode: development
-    workspace:
-      profile: <your-profile>    # ← Change this to your CLI profile
-
-  workshop:
-    mode: production
-    workspace:
-      profile: <your-profile>    # ← Change this to your CLI profile
-```
-
-> **How to find your profile**: Run `databricks auth profiles` to list available profiles.
-> If you haven't set one up, run `databricks auth login --host <workspace-url> --profile <profile-name>` first.
-
-Then deploy:
-
-```bash
-cd datacart-storefront
-
-# Validate the bundle
-databricks bundle validate
-
-# Deploy the app infrastructure (uses the default 'dev' target)
-databricks bundle deploy
-
-# Start the app (required after first deploy)
-databricks bundle run datacart_storefront
-```
-
-The bundle defines:
-- **`databricks.yml`** — Main config with `dev` and `workshop` targets
-- **`resources/datacart_storefront.app.yml`** — App resource definition
-
-To deploy to the `workshop` target instead:
-```bash
-databricks bundle deploy -t workshop
-databricks bundle run datacart_storefront -t workshop
-```
-
-> **How to diagnose**: If the storefront shows "Loading..." forever, hit `<app-url>/api/dbtest`.
-> If `PGHOST` shows `NOT SET`, the resource env vars weren't injected — redeploy the app.
-
-### Step 5: Grant SP Schema Permissions
-
-After adding the database resource, the SP can connect but still needs explicit grants on
-the `ecommerce` schema. Get the SP client ID from the app details:
-
-```bash
-databricks apps get datacart-storefront -p <your-profile>
-# Look for "service_principal_client_id"
-```
-
-Then run these SQL commands on the **production branch** as the project owner
-(e.g., in a Databricks notebook or the Lakebase SQL editor):
-
-```sql
--- Replace <SP_CLIENT_ID> with the actual service principal client ID
-GRANT USAGE ON SCHEMA ecommerce TO "<SP_CLIENT_ID>";
-GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
-GRANT ALL ON ALL SEQUENCES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
-ALTER DEFAULT PRIVILEGES IN SCHEMA ecommerce GRANT ALL ON TABLES TO "<SP_CLIENT_ID>";
-ALTER DEFAULT PRIVILEGES IN SCHEMA ecommerce GRANT ALL ON SEQUENCES TO "<SP_CLIENT_ID>";
-```
-
-Alternatively, run `setup_sp_roles_notebook.py` in the workspace — it automates these grants.
-
-### Step 6: Verify the Setup
-
-1. Open the app URL: `databricks apps get datacart-storefront -p <your-profile>`
-2. You should see the DataCart storefront homepage with the **"Spring Sale"** hero banner
-3. Click **"Shop Now"** to browse products with stock levels and ratings
-4. Add items to cart and place a test order
-5. Check the **Orders** page to confirm the order was recorded
-
-You can also test the debug endpoint: `<app-url>/api/dbtest` — it should show
-`db_connected: true` and `product_count: 50`.
+Initially you will see that the service principal doesn't have access to the tables in lakebase so you will see an error. Run notebook **`2.1 Lab - Connect Storefront to Lakebase`** to connect the two. Once this has been done, you will see the store populate in the UI. Now you can go through the rest of the workshop!
 
 ## Workshop Flow — Storefront Evolution
 
