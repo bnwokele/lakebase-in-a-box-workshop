@@ -162,7 +162,7 @@ Initially you will see that the service principal doesn't have access to the tab
 The storefront **auto-detects schema changes** every 30 seconds. No redeployment is needed — just
 run the lab and refresh the browser.
 
-### After Lab 1.1 — Setup
+### After Lab 2.1 — Setup
 
 **Database:** 5 tables (customers, products, inventory, orders, order_items). No reviews yet.
 
