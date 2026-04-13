@@ -4,10 +4,8 @@
 # MAGIC
 # MAGIC In the last demo, we created a feature branch `dev-loyalty-reviews`, added  the `loyalty_points` column to the `customers` table, created a new `loyalty_members` table to support DataCart's Spring Sale loyalty program, and added a `reviews` table to support product reviews in the UI. Now we will show how to promote these changes to the production branch.
 # MAGIC
-# MAGIC ## How to promote validated schema changes to `production`
-# MAGIC - Create DDL / .sql script with changes and use it to promote changes from dev to prod (integrate with Github actions or other versioning tool)
-# MAGIC - Take Snapshot of dev with all changes and restore making it the new production branch
-# MAGIC - and more
+# MAGIC ## How to run validated schema changes to `production`
+# MAGIC - Re-run the same migrations in prod (integrate with Github actions or other versioning tool)
 # MAGIC
 # MAGIC ## How It Works
 # MAGIC ```
