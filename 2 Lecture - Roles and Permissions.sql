@@ -7,9 +7,9 @@
 -- MAGIC %md
 -- MAGIC # Roles, Permissions and Authentication
 -- MAGIC
--- MAGIC This notebook provides comprehensive introduction on how permissions are handled in Lakebase. We will discuss the two main layers that we have: workspace layer and database layer.
+-- MAGIC This notebook provides a comprehensive introduction on how permissions are handled in Lakebase. We will discuss the two main layers that we have: workspace layer and database layer.
 -- MAGIC
--- MAGIC Then in the second part of the lab we will explore the different authentication methods available, how to set up them, and what are the best scenarios to use each of them.
+-- MAGIC In the second part of the lab we will explore the different authentication methods available, how to set them up, and the best scenarios to use each of them.
 -- MAGIC
 -- MAGIC ## Learning Objectives
 -- MAGIC
@@ -60,7 +60,7 @@
 -- MAGIC   </tbody>
 -- MAGIC </table>
 -- MAGIC
--- MAGIC Is important to mention that these two layers have **no automatic synchronization**. You can grant these permissions independently or together, depending on your organization's requirements.
+-- MAGIC It is important to mention that these two layers have **no automatic synchronization**. You can grant these permissions independently or together, depending on your organization's requirements.
 
 -- COMMAND ----------
 

@@ -10,12 +10,15 @@ command:
 
 env:
   - name: ENDPOINT_NAME
-    value: "projects/<project-name>/branches/production/endpoints/primary"
+    value: "<your-endpoint>"
   - name: LAKEBASE_PROJECT
-    value: "<project-name>"
+    value: "<your-lakebase-project-name>"
   - name: DB_SCHEMA
     value: "ecommerce"
 
 resources:
   - name: postgres
     type: postgres
+    postgres:
+      branch_id: "projects/<your-lakebase-project-name>/branches/production"
+      database: "databricks_postgres"

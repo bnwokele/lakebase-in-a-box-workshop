@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install databricks-sdk==0.71
+# MAGIC %pip install "databricks-sdk>=0.89.0"
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -152,33 +152,49 @@ def display_config_values(config_values):
 
 from databricks.sdk import WorkspaceClient
 
-def delete_database_instance(instance_name: str, confirm: bool = True) -> None:
+def delete_lakebase_project(project_name: str, confirm: bool = True) -> None:
     """
-    Delete a Lakebase database instance by name.
+    Delete a Lakebase Autoscaling *project* by name. This cascades to ALL of the
+    project's branches, endpoints, and data — it is permanent.
+
     Set confirm=False to skip the interactive prompt.
+
+    `project_name` may be the short id (e.g. "lakebase-branching-workshop-jane-doe")
+    or the full resource name ("projects/lakebase-branching-workshop-jane-doe").
     """
     w = WorkspaceClient()
 
-    all_instances = list(w.database.list_database_instances())
-    instance_names = [i.name for i in all_instances]
+    # Normalize to the full resource name used by the postgres (Autoscaling) API
+    full_name = project_name if project_name.startswith("projects/") else f"projects/{project_name}"
 
-    print("-----------Database Instance Cleanup-----------")
-    if instance_name not in instance_names:
-        print(f"Database instance '{instance_name}' not found. No action taken.")
+    all_projects = list(w.postgres.list_projects())
+    project_names = [p.name for p in all_projects]
+
+    print("-----------Lakebase Project Cleanup-----------")
+    if full_name not in project_names:
+        print(f"Lakebase project '{full_name}' not found. No action taken.")
         return
 
-    print(f"Found database instance: '{instance_name}'")
+    print(f"Found Lakebase project: '{full_name}'")
     if confirm:
-        ans = input(f"PLEASE CONFIRM: Delete database instance '{instance_name}'? (Y/N): ").strip().upper()
+        ans = input(
+            f"PLEASE CONFIRM: Delete Lakebase project '{full_name}' and ALL its "
+            f"branches, endpoints, and data? (Y/N): "
+        ).strip().upper()
     else:
         ans = "Y"
 
     if ans == "Y":
-        print(f"Deleting database instance: {instance_name}...")
-        w.database.delete_database_instance(name=instance_name)
+        print(f"Deleting Lakebase project: {full_name}...")
+        w.postgres.delete_project(name=full_name)
         print("Delete process started.")
     else:
-        print(f"Database instance '{instance_name}' was not deleted.")
+        print(f"Lakebase project '{full_name}' was not deleted.")
+
+
+# Backwards-compatible alias: earlier versions of this workshop used the legacy
+# flat "database instance" model (w.database.*). The Autoscaling tier uses projects.
+delete_database_instance = delete_lakebase_project
 
 # COMMAND ----------
 

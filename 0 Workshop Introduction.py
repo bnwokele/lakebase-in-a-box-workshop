@@ -39,7 +39,7 @@
 # MAGIC | **Compute (Endpoints)** | Each branch has one or more *endpoints* — PostgreSQL-compatible connection targets that process queries. Endpoints can scale up, scale down, or reach zero when idle, without touching your data. |
 # MAGIC | **Storage (Branches)** | All branch data lives in object storage. Because storage is separate from compute and Lakebase uses copy-on-write technology, creating a branch is **zero-copy** — no data is physically duplicated. A branch only consumes extra storage as changes diverge from its source. |
 # MAGIC | **Scale-to-Zero** | When there is no traffic or activity, the compute layer scales to zero, eliminating cost. The data remains safely in storage and the endpoint resumes instantly on the next connection. |
-# MAGIC | **Independent Scaling** | You can attach multiple endpoints to a single branch (e.g. one read-write, one read-only for additional reaad operations). |
+# MAGIC | **Independent Scaling** | You can attach multiple endpoints to a single branch (e.g. one read-write, plus one or more read-only *read replicas* to offload read traffic). A built-in PgBouncer connection pooler can front any endpoint to support many concurrent client connections. |
 
 # COMMAND ----------
 
@@ -50,7 +50,7 @@
 # MAGIC
 # MAGIC ### The Challenge
 # MAGIC
-# MAGIC DataCart's engineering team needs to modernize their database schema and website to support the release of multiple new features (product reviews, a new loyalty program, etc) ahead of the Spring Sale. Lets take a look at how lakebase improves developer productivity while still maintaining high performance of Postgres.
+# MAGIC DataCart is an online retailer and their engineering team needs to modernize their database schema and website to support the release of multiple new features (product reviews, a new loyalty program, etc) ahead of the Spring Sale. Lets take a look at how lakebase improves developer productivity while still maintaining high performance of Postgres.
 # MAGIC
 # MAGIC #### Parallel Development
 # MAGIC
@@ -80,10 +80,10 @@
 # MAGIC | Lab | What Happens to the Storefront |
 # MAGIC |-----|-------------------------------|
 # MAGIC | **1.1 Setup** | Basic storefront — products, stock, cart, orders (no ratings yet) |
-# MAGIC | **3.2 Parallel Dev** | No change — branches are isolated from production |
-# MAGIC | **3.3 Schema to Prod** | Star ratings, loyalty badges, "Earn pts" labels appear |
-# MAGIC | **3.4 Branch Reset** | Priority badges on orders, verified badge in navbar |
-# MAGIC | **4.1 PITR Disaster** | Orders page breaks → gracefully degrades → recovers after PITR |
+# MAGIC | **3.1 Parallel Dev** | No change — branches are isolated from production |
+# MAGIC | **3.2 Schema to Prod** | Star ratings, loyalty badges, "Earn pts" labels appear |
+# MAGIC | **3.3 Branch Reset** | Priority badges on orders, verified badge in navbar |
+# MAGIC | **4.1 Point-in-Time Recovery (PITR) Disaster** | Orders page breaks → gracefully degrades → recovers after PITR |
 # MAGIC | **5.1 Reverse ETL** | Sale badges, discount prices, "Spring Sale Deals" section appear |
 # MAGIC
 # MAGIC > The storefront auto-detects schema changes every 30 seconds. No redeployment needed.
@@ -100,3 +100,4 @@
 # MAGIC | **Point-in-Time Recovery** | Recovering from catastrophic human error without downtime using PITR |
 # MAGIC | **Reverse ETL** | Serving lakehouse analytics data to applications via synced tables |
 # MAGIC | **Roles & Permissions** | Managing access control across branches to enforce governance |
+# MAGIC | **Read Scaling & Pooling** | Offloading reads to read replicas and handling high connection counts with the built-in PgBouncer pooler |

@@ -1,9 +1,15 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 🚀 Notebook 00: Setup Lakebase Project & Seed Data
 # MAGIC
+# MAGIC In the previous lecture you created your Lakebase project **manually**. 
+# MAGIC
 # MAGIC This notebook creates a **Lakebase Autoscaling** project and seeds it with Datacarts
-# MAGIC e-commerce database.
+# MAGIC e-commerce database **automatically**. For all labs that will follow, always connect to the project created with **THIS** notebook.
 # MAGIC
 # MAGIC ## What This Notebook Does
 # MAGIC 1. Creates a new Lakebase project with autoscaling compute
@@ -35,7 +41,7 @@
 # COMMAND ----------
 
 # MAGIC %pip install databricks-sdk --upgrade -q
-# MAGIC %pip install psycopg2-binary -q
+# MAGIC %pip install "psycopg[binary]" -q
 
 # COMMAND ----------
 
@@ -92,7 +98,7 @@ print(f"   Suspend Timeout:   {suspend_timeout_seconds}s")
 # MAGIC - A default `production` branch is created automatically
 # MAGIC - A compute endpoint is attached to the `production` branch
 # MAGIC - Autoscaling is configured (0.5 – 4.0 CU)
-# MAGIC - The compute auto-suspends after 60s of idle time
+# MAGIC - The compute auto-suspends after 30 minutes (1800s) of idle time
 # MAGIC
 # MAGIC > ⏱️ It may take a few moments for your compute to activate.
 
@@ -148,7 +154,7 @@ print(f"\n🔗 Lakebase UI: {lakebase_url}")
 # MAGIC ## Step 2b: Verify Project & Get Main Branch
 # MAGIC
 # MAGIC Every Lakebase project comes with a default `production` branch. Let's confirm it exists
-# MAGIC and get its compute endpoint (we'll need the host to connect via `psycopg2`).
+# MAGIC and get its compute endpoint (we'll need the host to connect via `psycopg`).
 
 # COMMAND ----------
 
@@ -209,7 +215,7 @@ else:
 # MAGIC 1. When you create a project, a Postgres role for your Databricks identity is **automatically created**
 # MAGIC 2. This role owns the default `databricks_postgres` database and is a member of `databricks_superuser`
 # MAGIC 3. The SDK generates an OAuth token using `generate_database_credential`
-# MAGIC 4. We connect via `psycopg2` using the token as the password
+# MAGIC 4. We connect via `psycopg` using the token as the password
 # MAGIC
 # MAGIC > 💡 **Token lifetime**: Tokens auto-expire, so they're generated fresh each time.
 # MAGIC > This is more secure than static passwords and fully automated.
@@ -218,7 +224,7 @@ else:
 
 # COMMAND ----------
 
-import psycopg2
+import psycopg
 
 # Generate a fresh OAuth token
 cred = w.postgres.generate_database_credential(endpoint=prod_endpoint_name)
@@ -227,7 +233,7 @@ print(f"🔑 OAuth token generated (expires: {cred.expire_time})")
 
 # Connect to the database
 try:
-    conn = psycopg2.connect(
+    conn = psycopg.connect(
         host=prod_host,
         port=5432,
         dbname="databricks_postgres",
@@ -411,7 +417,7 @@ with conn.cursor() as cur:
         customers.append((name, email))
     
     cur.executemany(
-        f"INSERT INTO {db_schema}.customers (name, email) VALUES (%s, %s)",
+        f"INSERT INTO {db_schema}.customers (name, email) VALUES (%s, %s) ON CONFLICT (email) DO NOTHING",
         customers
     )
     print(f"✅ Inserted {len(customers)} customers")

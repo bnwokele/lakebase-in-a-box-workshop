@@ -17,9 +17,9 @@ targets:
     default: true
     mode: development
     workspace:
-      profile: fe-vm-ben
+      profile: <your-profile>    # ← Change to your Databricks CLI profile (run `databricks auth profiles`)
 
   workshop:
     mode: production
     workspace:
-      profile: fe-vm-ben
+      profile: <your-profile>    # ← Change to your Databricks CLI profile (run `databricks auth profiles`)

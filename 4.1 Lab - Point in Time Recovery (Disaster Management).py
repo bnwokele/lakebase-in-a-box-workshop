@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Scenario 5: Point-in-Time Recovery (PITR)
 # MAGIC
@@ -39,7 +43,7 @@
 # COMMAND ----------
 
 # MAGIC %pip install databricks-sdk --upgrade -q
-# MAGIC %pip install psycopg2-binary -q
+# MAGIC %pip install "psycopg[binary]" -q
 
 # COMMAND ----------
 
@@ -49,7 +53,7 @@ dbutils.library.restartPython()
 
 from databricks.sdk import WorkspaceClient
 import time
-import psycopg2
+import psycopg
 
 w = WorkspaceClient()
 
@@ -134,7 +138,7 @@ def connect_to_branch(branch_id, wait_seconds=300):
     host = ep.status.hosts.host
 
     cred = w.postgres.generate_database_credential(endpoint=ep.name)
-    branch_conn = psycopg2.connect(
+    branch_conn = psycopg.connect(
         host=host,
         port=5432,
         dbname="databricks_postgres",
