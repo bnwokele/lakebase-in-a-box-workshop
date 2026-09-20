@@ -137,7 +137,7 @@
 -- MAGIC
 -- MAGIC Complete the following steps to create your Lakebase database:
 -- MAGIC
--- MAGIC 1. Use the apps switcher to navigate to **Lakebase Postgress**. 
+-- MAGIC 1. Use the apps switcher to navigate to **Lakebase Postgres**.
 -- MAGIC
 -- MAGIC <img src="./Includes/images/core_concepts/lakebase_autoscaling.png"
 -- MAGIC      alt="Lakebase Autoscaling"
@@ -246,6 +246,41 @@
 -- MAGIC
 -- MAGIC
 -- MAGIC **IMPORTANT:** Make sure to review the full documentation on how to connect to a Lakebase Autoscaling Project in the following link [Connect to your database](https://docs.databricks.com/aws/en/oltp/projects/connect) 
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Cell 12
+-- MAGIC %md
+-- MAGIC #### B4. Lakebase and Genie Code 
+-- MAGIC Genie Code (the Databricks AI assistant) has built-in knowledge of Lakebase Autoscaling and can help you work with your PostgreSQL projects directly from notebooks.
+-- MAGIC
+-- MAGIC ![image_1788262531890.png](./Includes/images/core_concepts/image_1788262531890.png "image_1788262531890.png")
+-- MAGIC
+-- MAGIC
+-- MAGIC ### What Genie Code Can Do with Lakebase
+-- MAGIC
+-- MAGIC 1. **Create and manage projects** — Provision new Lakebase Autoscaling projects, branches, and computes using the Databricks Python SDK
+-- MAGIC
+-- MAGIC 2. **Generate PostgreSQL code** — Write `CREATE TABLE`, `INSERT`, and query statements tailored for Lakebase PostgreSQL
+-- MAGIC
+-- MAGIC 3. **Execute SQL against your database** — Run PostgreSQL statements directly against a Lakebase database from a notebook cell
+-- MAGIC
+-- MAGIC 4. **Explore and troubleshoot** — Query system catalogs (`pg_catalog`, `information_schema`), inspect roles, and debug connection issues
+-- MAGIC
+-- MAGIC <div style="
+-- MAGIC   border-left: 4px solid #1976d2;
+-- MAGIC   background: #e3f2fd;
+-- MAGIC   padding: 14px 18px;
+-- MAGIC   border-radius: 4px;
+-- MAGIC   margin: 16px 0;
+-- MAGIC ">
+-- MAGIC   <strong style="display:block; color:#0d47a1; margin-bottom:6px;">
+-- MAGIC     Try It Out
+-- MAGIC   </strong>
+-- MAGIC   <div style="color:#333;">
+-- MAGIC     Open the Genie Code chat panel and ask it to help you with Lakebase tasks — for example: <em>"Create a new Lakebase project called my-test-db"</em> or <em>"Insert a row into my customer_leads table"</em>. Genie Code will generate and run the appropriate code for you.
+-- MAGIC   </div>
+-- MAGIC </div>
 
 -- COMMAND ----------
 
@@ -623,7 +658,7 @@
 -- MAGIC
 -- MAGIC 1. In Catalog Explorer, click the plus icon and **Create a catalog**.
 -- MAGIC
--- MAGIC 2. Enter a catalog name (for example, `yourname-lakebase-catalog`).
+-- MAGIC 2. Enter a catalog name (for example, `yourname_lakebase_catalog`).
 -- MAGIC
 -- MAGIC 3. Select **Lakebase Postgres** as the catalog type, then choose the **Autoscaling** option.
 -- MAGIC
@@ -885,7 +920,7 @@
 -- MAGIC %md
 -- MAGIC ### E1. Continue Your Learning
 -- MAGIC
--- MAGIC With your **Lakebase database instance** created, continue to next notebook.
+-- MAGIC Now you learned how to manually create a Lakebase project. Now, continue to the next notebook.
 
 -- COMMAND ----------
 

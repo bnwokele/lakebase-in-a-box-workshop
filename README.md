@@ -23,6 +23,7 @@ You will step into the role of a developer at DataCart, a rapidly growing e-comm
 | 5.1 | `5.1 Lab - Reverse ETL with Synced Table` | Lab | Creates promotions Delta table in Unity Catalog, syncs to Lakebase via reverse ETL |
 | 6 | `6 Lecture - Monitoring` | Lecture | How to monitor your Lakebase instance / How to interpret graphs provided in the Lakebase monitoring page |
 | 7 | `7 Lecture - Connects Apps to Lakebase` | Lecture | How to connect external apps to lakebase |
+| 8 | `8 Lecture - Read Replicas & Connection Pooling` | Lecture | Scale reads with read replicas and handle high connection counts with the built-in PgBouncer pooler |
 
 
 ## DataCart Storefront App 
@@ -54,9 +55,9 @@ A customer-facing e-commerce web application (React + FastAPI) that **evolves in
 | Feature | Appears After |
 |---------|--------------|
 | Products, stock badges, cart, orders | Lab 1.1 |
-| Star ratings, reviews | Lab 3.3 |
-| Loyalty tier badge, points, "Earn X pts" | Lab 3.3 |
-| Priority badges, verified badge | Lab 3.4 |
+| Star ratings, reviews | Lab 3.2 |
+| Loyalty tier badge, points, "Earn X pts" | Lab 3.2 |
+| Priority badges, verified badge | Lab 3.3 |
 | Graceful degradation during disaster | Lab 4.1 |
 | Sale badges, discount prices, promo deals | Lab 5.1 |
 
@@ -150,7 +151,7 @@ Now deploy with the source code. Choose one of the options below.
 
 1. Go to **Compute > Apps > datacart-storefront**
 2. Click the **Deploy** button
-3. Set the **Source code path** to: `/Workspace/Users/<your-email>/datacart-storefront`
+3. Set the **Source code path** to: `/Workspace/Users/<your-email>/lakebase-in-a-box-workshop/datacart-storefront`
 4. Click **Deploy**
 
 #### Option B: Deploy via Databricks Asset Bundles (DABs)
@@ -272,11 +273,11 @@ Tables that **survive**: customers, products, inventory, reviews, loyalty_member
 - Orders page is back with full order history
 - Best Sellers works again
 - Checkout is functional again
-- **Priority badges are gone** — PITR restored to a point before Lab 3.4
+- **Priority badges are gone** — PITR restored to a point before Lab 3.3
 
 ### After Lab 4.1 — Post-Recovery Migrations
 
-**Database change:** Lab 3.4 migrations re-applied (email_verified + priority columns).
+**Database change:** Lab 3.3 migrations re-applied (email_verified + priority columns).
 
 **Storefront shows (full restore):**
 - Priority badges are back on the Orders page
@@ -290,14 +291,14 @@ Tables that **survive**: customers, products, inventory, reviews, loyalty_member
 ### After Lab 5.1 — Reverse ETL with Synced Tables
 
 **Database change:** A `promotions` Delta table is created in Unity Catalog
-(`serverless_stable_339b90_catalog.ecommerce.promotions`) and synced to Lakebase
+(`<your-catalog>.ecommerce.promotions`) and synced to Lakebase
 via a synced table pipeline. First synced to a `dev-promotions` branch for validation,
 then promoted to the `production` branch. The synced table appears as
 `promotions_synced_prod` (or `promotions`) in the `ecommerce` Postgres schema.
 
 **Important — SP permissions for synced tables:** After the sync completes, you must
 re-grant the app SP access to the new table. Synced tables are created by the Lakebase
-sync pipeline (a different internal role), so `ALTER DEFAULT PRIVILEGES` from Lab 1.2
+sync pipeline (a different internal role), so `ALTER DEFAULT PRIVILEGES` from Lab 2.1
 does **not** cover them. Lab 5.1 Step 7 handles this with:
 ```sql
 GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
@@ -339,7 +340,7 @@ GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
 - If `db_connected: false` with "password authentication failed": the database resource
   was not added (Step 3), or the SP role was not auto-created. Remove and re-add the resource,
   then **redeploy**.
-- If `db_connected: true` with `schema_error`: the SP needs schema grants (Step 5 / Lab 1.2).
+- If `db_connected: true` with `schema_error`: the SP needs schema grants (Step 5 / Lab 2.1).
 
 ### 500 errors on product pages
 - Check app logs at `<app-url>/logz`

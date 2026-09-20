@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Scenario 6: Reverse ETL — Serving Lakehouse Data to Applications
 # MAGIC
@@ -20,7 +24,7 @@
 # MAGIC ┌─────────────────────────────────────────────────────────────────┐
 # MAGIC │                      DATA LAKEHOUSE                            │
 # MAGIC │  ┌─────────────────────────────────────────────────────────┐   │
-# MAGIC │  │  Unity Catalog: serverless_stable_339b90_catalog        │   │
+# MAGIC │  │  Unity Catalog: <your-catalog>                          │   │
 # MAGIC │  │  └── ecommerce.promotions (Delta table)                 │   │
 # MAGIC │  │       • badge_text, discount_pct, sale_price            │   │
 # MAGIC │  │       • Updated by marketing analytics pipelines        │   │
@@ -56,12 +60,17 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC > ⚠️ **Before running:** set `UC_CATALOG` and `UC_SCHEMA` below to a Unity Catalog catalog/schema you can write to in this workspace.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Step 0: Install Dependencies & Configure
 
 # COMMAND ----------
 
 # MAGIC %pip install databricks-sdk --upgrade -q
-# MAGIC %pip install psycopg2-binary -q
+# MAGIC %pip install "psycopg[binary]" -q
 
 # COMMAND ----------
 
@@ -71,7 +80,7 @@ dbutils.library.restartPython()
 
 from databricks.sdk import WorkspaceClient
 import time
-import psycopg2
+import psycopg
 
 w = WorkspaceClient()
 
@@ -225,7 +234,7 @@ def connect_to_branch(branch_id, wait_seconds=300):
                 break
     host = ep.status.hosts.host
     cred = w.postgres.generate_database_credential(endpoint=ep.name)
-    conn = psycopg2.connect(host=host, port=5432, dbname="databricks_postgres",
+    conn = psycopg.connect(host=host, port=5432, dbname="databricks_postgres",
                             user=db_user, password=cred.token, sslmode="require")
     conn.autocommit = True
     print(f"✅ Connected to branch '{branch_id}'")
@@ -318,7 +327,7 @@ print(f"✅ Branch '{PROMO_BRANCH}' created!")
 # MAGIC **Follow these steps in the Databricks UI:**
 # MAGIC
 # MAGIC 1. Navigate to **Catalog** in the left sidebar
-# MAGIC 2. Browse to `serverless_stable_339b90_catalog` > `ecommerce` > `promotions`
+# MAGIC 2. Browse to `<your-catalog>` > `ecommerce` > `promotions`
 # MAGIC 3. Click on the `promotions` table
 # MAGIC 4. Click **Create** > **Synced table**
 # MAGIC 5. In the dialog:
@@ -339,6 +348,76 @@ print(f"✅ Branch '{PROMO_BRANCH}' created!")
 # MAGIC
 # MAGIC **Wait for the sync to complete before continuing.** You can check status in the Catalog UI
 # MAGIC or by querying the pipeline.
+
+# COMMAND ----------
+
+# DBTITLE 1,Create synced table to dev branch via SDK
+from databricks.sdk.service.postgres import (
+    SyncedTable,
+    SyncedTableSyncedTableSpec,
+    SyncedTableSyncedTableSpecSyncedTableSchedulingPolicy,
+)
+
+# Create ecommerce schema if it doesn't exist (information_schema is reserved for synced tables)
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {UC_CATALOG}.ecommerce")
+print(f"✅ Ensured schema {UC_CATALOG}.ecommerce exists")
+
+synced_table_name = f"{UC_CATALOG}.ecommerce.promotions_synced_dev"
+branch_full = f"projects/{project_name}/branches/{PROMO_BRANCH}"
+
+print(f"🔄 Creating synced table '{synced_table_name}'...")
+print(f"   Source: {UC_TABLE}")
+print(f"   Branch: {branch_full}")
+print(f"   Mode:   Snapshot")
+print(f"   PK:     id")
+
+w.postgres.create_synced_table(
+    synced_table=SyncedTable(spec=SyncedTableSyncedTableSpec(
+        source_table_full_name=UC_TABLE,
+        branch=branch_full,
+        primary_key_columns=["id"],
+        scheduling_policy=SyncedTableSyncedTableSpecSyncedTableSchedulingPolicy.SNAPSHOT,
+        postgres_database="databricks_postgres",
+        create_database_objects_if_missing=True,
+    )),
+    synced_table_id=synced_table_name,
+).wait()
+
+print(f"\n✅ Synced table created: {synced_table_name}")
+print(f"   Snapshot sync complete — promotions are now in Lakebase on the '{PROMO_BRANCH}' branch.")
+
+# COMMAND ----------
+
+# DBTITLE 1,Create synced table to production branch via SDK
+from databricks.sdk.service.postgres import (
+    SyncedTable,
+    SyncedTableSyncedTableSpec,
+    SyncedTableSyncedTableSpecSyncedTableSchedulingPolicy,
+)
+
+synced_table_prod = f"{UC_CATALOG}.ecommerce.promotions_synced_prod"
+branch_prod = f"projects/{project_name}/branches/production"
+
+print(f"🔄 Creating synced table '{synced_table_prod}'...")
+print(f"   Source: {UC_TABLE}")
+print(f"   Branch: {branch_prod}")
+print(f"   Mode:   Snapshot")
+print(f"   PK:     id")
+
+w.postgres.create_synced_table(
+    synced_table=SyncedTable(spec=SyncedTableSyncedTableSpec(
+        source_table_full_name=UC_TABLE,
+        branch=branch_prod,
+        primary_key_columns=["id"],
+        scheduling_policy=SyncedTableSyncedTableSpecSyncedTableSchedulingPolicy.SNAPSHOT,
+        postgres_database="databricks_postgres",
+        create_database_objects_if_missing=True,
+    )),
+    synced_table_id=synced_table_prod,
+).wait()
+
+print(f"\n✅ Synced table created: {synced_table_prod}")
+print(f"   Snapshot sync complete — promotions are now in Lakebase on the 'production' branch.")
 
 # COMMAND ----------
 
@@ -388,7 +467,7 @@ with conn_branch.cursor() as cur:
 # MAGIC
 # MAGIC **Follow the same steps as Step 4b, but select the `production` branch:**
 # MAGIC
-# MAGIC 1. Navigate to **Catalog** > `serverless_stable_339b90_catalog` > `ecommerce` > `promotions`
+# MAGIC 1. Navigate to **Catalog** > `<your-catalog>` > `ecommerce` > `promotions`
 # MAGIC 2. Click **Create** > **Synced table**
 # MAGIC 3. In the dialog:
 # MAGIC    - **Table name**: input **promotions_synced_prod**

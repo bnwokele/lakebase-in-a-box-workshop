@@ -94,7 +94,7 @@ code. This ensures the connection environment variables (`PGHOST`, `PGUSER`, `PG
 1. Navigate to **Compute > Apps** in your Databricks workspace
 2. Click **Create App**
 3. Fill in:
-   - **Name**: `datacart-storefront`
+   - **Name**: `datacart-storefront-yourname`
    - **Description**: `DataCart E-Commerce Storefront - Lakebase Branching Workshop`
 4. Click **Next: Configure**
 5. Click **Add Resource**
@@ -121,7 +121,7 @@ Now deploy with the source code. Choose one of the options below.
 
 1. Go to **Compute > Apps > datacart-storefront**
 2. Click the **Deploy** button
-3. Set the **Source code path** to: `/Workspace/Users/<your-email>/datacart-storefront`
+3. Set the **Source code path** to: `/Workspace/Users/<your-email>/lakebase-in-a-box-workshop/datacart-storefront`
 4. Click **Deploy**
 
 ### Option B: Deploy via Databricks Asset Bundles (DABs)
@@ -183,7 +183,7 @@ databricks apps create datacart-storefront \
 
 # Deploy
 databricks apps deploy datacart-storefront \
-  --source-code-path /Workspace/Users/<your-email>/datacart-storefront \
+  --source-code-path /Workspace/Users/<your-email>/lakebase-in-a-box-workshop/datacart-storefront \
   -p <your-profile>
 ```
 
@@ -193,18 +193,66 @@ databricks apps deploy datacart-storefront \
 ## Step 5: Grant SP Schema Permissions
 
 After adding the database resource, the SP can connect but still needs explicit grants on
-the `ecommerce` schema. Get the SP client ID from the app details:
+the `ecommerce` schema.
+
+> **Recommended**: Run notebook **`2.1 Lab - Connect Storefront to Lakebase`** — it
+> automates this entire step (retrieves the SP client ID, connects to the production
+> branch, and runs all the grants). If you use Lab 2.1, skip ahead to Step 6.
+
+### What is the SP Client ID?
+
+The `<SP_CLIENT_ID>` is the **OAuth client ID** (a UUID) of the service principal that
+Databricks created for your app. Lakebase uses this UUID as the Postgres role name.
+
+**Important:** the **App ID shown in Compute > Apps** is this same UUID. If you copy the
+App ID from the Apps UI and the GRANT statements work, that is expected and correct.
+
+> **Use this value in the GRANT statements:**
+> * `App ID` in the Apps UI
+> * `service_principal_client_id` from the SDK / CLI
+>
+> These are the same value.
+
+> **⚠️ Do NOT use the Service Principal's Databricks numeric ID** (the one shown in
+> Admin Settings > Service Principals, or returned by `databricks service-principals list`).
+> That is a different, workspace-internal identifier and will fail with a "role does not exist"
+> error in Lakebase.
+
+### How to retrieve it
+
+**Option A — From the Databricks Apps UI (simplest):**
+
+Navigate to **Compute > Apps > your app**. Copy the **App ID** displayed in the UI.
+That value is the SP client ID and is the one to paste into the GRANT statements.
+
+**Option B — In a Databricks notebook:**
+
+```python
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+app_info = w.apps.get("<your-app-name>")
+print(app_info.service_principal_client_id)
+```
+
+**Option C — Via the Databricks CLI (in a local terminal):**
 
 ```bash
 databricks apps get datacart-storefront -p <your-profile>
-# Look for "service_principal_client_id"
+# Look for "service_principal_client_id" in the output
 ```
 
-Then run these SQL commands on the **production branch** as the project owner
-(e.g., in a Databricks notebook or the Lakebase SQL editor):
+### Where to run the grants
+
+Run these SQL commands on the **production branch** as the project owner. You can run
+them in either of these places:
+
+* a **Databricks notebook** connected to your Lakebase endpoint (as Lab 2.1 does)
+* the **Lakebase SQL editor**
+
+Paste the **App ID / SP client ID UUID** into the statements below:
 
 ```sql
--- Replace <SP_CLIENT_ID> with the actual service principal client ID
+-- Replace <SP_CLIENT_ID> with the actual service principal client ID (the UUID)
 GRANT USAGE ON SCHEMA ecommerce TO "<SP_CLIENT_ID>";
 GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
 GRANT ALL ON ALL SEQUENCES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
@@ -212,11 +260,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA ecommerce GRANT ALL ON TABLES TO "<SP_CLIENT_
 ALTER DEFAULT PRIVILEGES IN SCHEMA ecommerce GRANT ALL ON SEQUENCES TO "<SP_CLIENT_ID>";
 ```
 
-Alternatively, run `setup_sp_roles_notebook.py` in the workspace — it automates these grants.
-
 ## Step 6: Verify the Setup
 
-1. Open the app URL: `databricks apps get datacart-storefront -p <your-profile>`
+1. Open the app URL
 2. You should see the DataCart storefront homepage with the **"Spring Sale"** hero banner
 3. Click **"Shop Now"** to browse products with stock levels and ratings
 4. Add items to cart and place a test order
@@ -241,13 +287,7 @@ run the lab and refresh the browser.
 - **No star ratings** — reviews table doesn't exist yet
 - **No loyalty features** — loyalty tables don't exist yet
 
-### After Lab 3.1 — Create Branch (Data Only)
-
-**Database:** No changes to production. A `dev-readonly` branch is created and deleted.
-
-**Storefront shows:** No change — branches are fully isolated from production.
-
-### After Lab 3.2 — Parallel Development
+### After Lab 3.1 — Parallel Development
 
 **Database:** No changes to production. Three feature branches are created:
 - `dev-loyalty-reviews` — loyalty_points column, loyalty_members table, and **reviews table**
@@ -256,7 +296,7 @@ run the lab and refresh the browser.
 
 **Storefront shows:** No change — all work is on isolated branches.
 
-### After Lab 3.3 — Schema to Prod Migration
+### After Lab 3.2 — Schema to Prod Migration
 
 **Database changes on production:**
 - `customers` table gets `loyalty_points` column (backfilled from order history)
@@ -273,7 +313,7 @@ run the lab and refresh the browser.
 - **Cart** — "You'll earn X loyalty points" summary with tier badge
 - **Checkout** — Awards loyalty points after placing an order
 
-### After Lab 3.4 — Branch Reset
+### After Lab 3.3 — Branch Reset
 
 **Database changes on production:**
 - `customers` table gets `email_verified` BOOLEAN column (~1/3 verified)
@@ -309,11 +349,11 @@ Tables that **survive**: customers, products, inventory, reviews, loyalty_member
 - Orders page is back with full order history
 - Best Sellers works again
 - Checkout is functional again
-- **Priority badges are gone** — PITR restored to a point before Lab 3.4
+- **Priority badges are gone** — PITR restored to a point before Lab 3.3
 
 ### After Lab 4.1 — Post-Recovery Migrations
 
-**Database change:** Lab 3.4 migrations re-applied (email_verified + priority columns).
+**Database change:** Lab 3.3 migrations re-applied (email_verified + priority columns).
 
 **Storefront shows (full restore):**
 - Priority badges are back on the Orders page
@@ -327,14 +367,14 @@ Tables that **survive**: customers, products, inventory, reviews, loyalty_member
 ### After Lab 5.1 — Reverse ETL with Synced Tables
 
 **Database change:** A `promotions` Delta table is created in Unity Catalog
-(`serverless_stable_339b90_catalog.ecommerce.promotions`) and synced to Lakebase
+(`<your-catalog>.ecommerce.promotions`) and synced to Lakebase
 via a synced table pipeline. First synced to a `dev-promotions` branch for validation,
 then promoted to the `production` branch. The synced table appears as
 `promotions_synced_prod` (or `promotions`) in the `ecommerce` Postgres schema.
 
 **Important — SP permissions for synced tables:** After the sync completes, you must
 re-grant the app SP access to the new table. Synced tables are created by the Lakebase
-sync pipeline (a different internal role), so `ALTER DEFAULT PRIVILEGES` from Lab 1.2
+sync pipeline (a different internal role), so `ALTER DEFAULT PRIVILEGES` from Lab 2.1
 does **not** cover them. Lab 5.1 Step 7 handles this with:
 ```sql
 GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
@@ -376,7 +416,7 @@ GRANT ALL ON ALL TABLES IN SCHEMA ecommerce TO "<SP_CLIENT_ID>";
 - If `db_connected: false` with "password authentication failed": the database resource
   was not added (Step 3), or the SP role was not auto-created. Remove and re-add the resource,
   then **redeploy**.
-- If `db_connected: true` with `schema_error`: the SP needs schema grants (Step 5 / Lab 1.2).
+- If `db_connected: true` with `schema_error`: the SP needs schema grants (Step 5 / Lab 2.1).
 
 ### 500 errors on product pages
 - Check app logs at `<app-url>/logz`

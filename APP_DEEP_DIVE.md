@@ -339,7 +339,7 @@ After PITR recovery, all features come back within 30 seconds (cache TTL). Prior
 ## Reverse ETL — Promotions via Synced Tables
 
 Lab 5.1 demonstrates **Lakebase Synced Tables** (reverse ETL). A `promotions` Delta table
-in Unity Catalog (`serverless_stable_339b90_catalog.ecommerce.promotions`) is synced to
+in Unity Catalog (`<your-catalog>.ecommerce.promotions`) is synced to
 the Lakebase `ecommerce` schema via a managed pipeline. The synced table appears in Postgres
 as `promotions_synced_prod` (the name may vary depending on how it's created in the UI).
 
@@ -397,7 +397,7 @@ end_date TIMESTAMP          -- Promotion end
 
 1. The Unity Catalog schema name **must match** the Lakebase Postgres schema name. Since the
    storefront reads from `ecommerce.*`, the Delta table must be in a UC schema named `ecommerce`
-   (e.g., `serverless_stable_339b90_catalog.ecommerce.promotions`).
+   (e.g., `<your-catalog>.ecommerce.promotions`).
 
 2. After each new synced table is created, **re-grant table permissions** to the app SP.
    Synced tables are created by the Lakebase sync pipeline (an internal role), not by your

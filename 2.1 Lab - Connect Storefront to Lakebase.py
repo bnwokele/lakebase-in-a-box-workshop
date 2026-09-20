@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # Lab: Connect the DataCart Storefront to Lakebase
 # MAGIC
@@ -6,7 +10,7 @@
 # MAGIC
 # MAGIC ## Where We Are
 # MAGIC
-# MAGIC At this point in the workshop, two things have been completed:
+# MAGIC At this point in the workshop, two things have been completed (PREREQUISTE: you followed the steps of WORKSHOP_SETUP.md):
 # MAGIC
 # MAGIC 1. **Lab 1.1** created a Lakebase Autoscaling project and seeded the `ecommerce` schema
 # MAGIC    with 5 tables: `customers`, `products`, `inventory`, `orders`, and `order_items`.
@@ -55,12 +59,17 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC > ⚠️ **Before running:** set `APP_NAME` below to your deployed DataCart app's name (from **Compute > Apps**).
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Step 0: Install Dependencies
 
 # COMMAND ----------
 
 # MAGIC %pip install databricks-sdk --upgrade -q
-# MAGIC %pip install psycopg2-binary -q
+# MAGIC %pip install "psycopg[binary]" -q
 
 # COMMAND ----------
 
@@ -87,7 +96,7 @@ username_prefix = db_user.split("@")[0].replace(".", "-")
 project_name = f"lakebase-branching-workshop-{username_prefix}"
 
 # Look up the app to find its service principal
-APP_NAME = "<ADD APP NAME HERE>"
+APP_NAME = "<your-app-name>"
 
 app_info = w.apps.get(APP_NAME)
 SP_CLIENT_ID = app_info.service_principal_client_id
@@ -137,7 +146,7 @@ print(f"   Schema:        ecommerce")
 
 # COMMAND ----------
 
-import psycopg2
+import psycopg
 
 DB_SCHEMA = "ecommerce"
 
@@ -154,7 +163,7 @@ prod_endpoint_name = prod_endpoint.name
 # Generate your OAuth credential (project owner)
 cred = w.postgres.generate_database_credential(endpoint=prod_endpoint_name)
 
-conn = psycopg2.connect(
+conn = psycopg.connect(
     host=prod_host,
     port=5432,
     dbname="databricks_postgres",
@@ -288,7 +297,9 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Check the app! The service should be connected now! show screenshot
+# MAGIC Check the app! The service should be connected now!
+# MAGIC
+# MAGIC ![image_1785920891911.png](./image_1785920891911.png "image_1785920891911.png")
 
 # COMMAND ----------
 
@@ -322,7 +333,7 @@ for branch in all_branches:
         branch_endpoint_name = branch_endpoints[0].name
         branch_cred = w.postgres.generate_database_credential(endpoint=branch_endpoint_name)
 
-        branch_conn = psycopg2.connect(
+        branch_conn = psycopg.connect(
             host=branch_host, port=5432,
             dbname="databricks_postgres",
             user=db_user, password=branch_cred.token,

@@ -60,7 +60,7 @@
 # COMMAND ----------
 
 # MAGIC %pip install databricks-sdk --upgrade -q
-# MAGIC %pip install psycopg2-binary -q
+# MAGIC %pip install "psycopg[binary]" -q
 
 # COMMAND ----------
 
@@ -137,7 +137,7 @@ print(f"   Schema:        ecommerce")
 
 # COMMAND ----------
 
-import psycopg2
+import psycopg
 
 DB_SCHEMA = "ecommerce"
 
@@ -154,7 +154,7 @@ prod_endpoint_name = prod_endpoint.name
 # Generate your OAuth credential (project owner)
 cred = w.postgres.generate_database_credential(endpoint=prod_endpoint_name)
 
-conn = psycopg2.connect(
+conn = psycopg.connect(
     host=prod_host,
     port=5432,
     dbname="databricks_postgres",
@@ -397,7 +397,7 @@ for branch in all_branches:
         branch_endpoint_name = branch_endpoints[0].name
         branch_cred = w.postgres.generate_database_credential(endpoint=branch_endpoint_name)
 
-        branch_conn = psycopg2.connect(
+        branch_conn = psycopg.connect(
             host=branch_host, port=5432,
             dbname="databricks_postgres",
             user=db_user, password=branch_cred.token,
